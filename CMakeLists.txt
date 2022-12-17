@@ -9,12 +9,13 @@ find_package(Qt6 6.2 COMPONENTS Quick REQUIRED)
 
 qt_add_executable(appground-station
     main.cpp
+    antenna.h antenna.cpp
 )
 
 qt_add_qml_module(appground-station
     URI ground-station
     VERSION 1.0
-    QML_FILES main.qml 
+    QML_FILES main.qml UIButton.qml
 )
 
 set_target_properties(appground-station PROPERTIES
