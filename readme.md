@@ -11,7 +11,7 @@ QtQuick Ddesktop app of the ground station + Arduino code of the LoRa
 | E | Error | 1 byte | which error occured (see [error codes](#errors-codes)) |
 | D | Data | 9 float | barometer, lat, lng, linear acceleration, angular acceleration |
 | P | Parachute opened | 1 byte | 1 for drogue, 2 for main |
-| F | Frequency change | 1 byte | 0 to 81 (see LoRa library) |
+| F | Frequency change | 1 byte | 0 to 81 (see [LoRa library](https://github.com/xreef/EByte_LoRa_E220_Series_Library#basic-configuration-option)) |
 
 All of the messages are simply forwarded by the GS LoRa, but some extra logic is implemented for `[C]` and `[F]`.
 
