@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QTime>
 #include <QVector3D>
+#include <QSerialPort>
 
 struct RocketData {
     Q_GADGET
@@ -83,6 +84,9 @@ private:
     quint8 m_frequency = 255;
 
     QTime m_startTime;
+    void setConnected();
+    QSerialPort *arduino;
+    void openSerialPort();
 
     void __start();
     void __setF();
@@ -91,6 +95,8 @@ private:
     float __lastBaro = 1013;
     void __randomData();
 
+private slots:
+    void readData();
 
 signals:
     void connectedChanged(bool);
