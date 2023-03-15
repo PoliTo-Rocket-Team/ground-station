@@ -1,5 +1,9 @@
 #include "antenna.h"
-
+#include <QTimer>
+#include <QIODevice>
+#include <QSerialPort>
+#include<QDebug>
+#include <unistd.h>
 #include <QRandomGenerator>
 
 QVector3D vectorFromBytes(std::byte* raw) {
@@ -19,12 +23,17 @@ RocketData::RocketData(std::byte* raw)
     std::memcpy(&barometer, raw+8, 4);
 }
 
+
+
 Antenna::Antenna(QObject *parent)
     : QObject{parent}
 {
     QTimer::singleShot(3000, this, &Antenna::__start);
     __timer = new QTimer(this);
     connect(__timer, &QTimer::timeout, this, &Antenna::__randomData);
+        arduino = new QSerialPort(this);
+    openSerialPort();
+    QSerialPort::connect(arduino, SIGNAL(readyRead()), this, SLOT(readData()));
 }
 
 void Antenna::__start() {
@@ -74,7 +83,26 @@ void Antenna::setFrequency(quint8 f) {
     QTimer::singleShot(1000, this, &Antenna::__setF);
 }
 
+void Antenna::openSerialPort()
+{
+    // TODO: use QSerialPortInfo to get port name
+   arduino->setPortName("/dev/ttyACM0");
+   arduino->setBaudRate(QSerialPort::Baud9600);
+   arduino->setDataBits(QSerialPort::Data8);
+   arduino->setParity(QSerialPort::NoParity);
+   arduino->setStopBits(QSerialPort::OneStop);
+   arduino->setFlowControl(QSerialPort::NoFlowControl);
+   arduino->setDataTerminalReady(true);
+   arduino->open(QIODevice::ReadWrite);
+   setConnected();
+}
 
-void Antenna::reset() {
+void Antenna::readData()
+{
+    QByteArray data = arduino->readAll();
+    qDebug() << "UART:" << data;
+}
 
+void Antenna::reset(){
+    return;
 }

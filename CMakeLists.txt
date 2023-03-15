@@ -30,7 +30,8 @@ set_target_properties(appground-station PROPERTIES
 
 target_link_libraries(appground-station
     PRIVATE Qt6::Quick Qt6::Charts)
-
+find_package(Qt6 COMPONENTS SerialPort REQUIRED)
+target_link_libraries(appground-station PRIVATE Qt6::SerialPort)
 install(TARGETS appground-station
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
