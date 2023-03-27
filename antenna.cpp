@@ -32,6 +32,7 @@ Antenna::Antenna(QObject *parent)
     __timer = new QTimer(this);
     connect(__timer, &QTimer::timeout, this, &Antenna::__randomData);
         arduino = new QSerialPort(this);
+    arduino = new QSerialPort(this);
     openSerialPort();
     QSerialPort::connect(arduino, SIGNAL(readyRead()), this, SLOT(readData()));
 }
@@ -85,22 +86,39 @@ void Antenna::setFrequency(quint8 f) {
 
 void Antenna::openSerialPort()
 {
+
     // TODO: use QSerialPortInfo to get port name
-   arduino->setPortName("/dev/ttyACM0");
-   arduino->setBaudRate(QSerialPort::Baud9600);
-   arduino->setDataBits(QSerialPort::Data8);
-   arduino->setParity(QSerialPort::NoParity);
-   arduino->setStopBits(QSerialPort::OneStop);
-   arduino->setFlowControl(QSerialPort::NoFlowControl);
-   arduino->setDataTerminalReady(true);
-   arduino->open(QIODevice::ReadWrite);
-   setConnected();
+    arduino->setPortName("/dev/ttyACM0");
+    arduino->setBaudRate(QSerialPort::Baud9600);
+    arduino->setDataBits(QSerialPort::Data8);
+    arduino->setParity(QSerialPort::NoParity);
+    arduino->setStopBits(QSerialPort::OneStop);
+    arduino->setFlowControl(QSerialPort::NoFlowControl);
+
+    if(!arduino->open(QIODevice::ReadWrite)){
+        qDebug() << (tr("error %1").arg(arduino->error()));
+        return;
+    }
+}
+
+void Antenna::setConnected() {
+    QByteArray data;
+    // 0x42 == B
+    data.append(0x42);
+    // sending ready signal to arduino
+    arduino->write(data);
+    arduino->waitForBytesWritten();
 }
 
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
+
+    if(data.at(0) == 0x52)
+        setConnected();
+
     qDebug() << "UART:" << data;
+
 }
 
 void Antenna::reset(){
