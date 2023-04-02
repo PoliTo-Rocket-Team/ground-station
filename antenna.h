@@ -42,14 +42,14 @@ private:
      */
     quint8 m_frequency = 255;
 
-    void setConnected();
+    void __start();
 
 public:
     explicit Antenna(QObject *parent = nullptr);
 
-    bool isConnected() const;
-    quint8 getError() const;
-    quint8 getFrequency() const;
+    bool isConnected() const { return m_connected; };
+    quint8 getError() const { return m_error; };
+    quint8 getFrequency() const { return m_frequency; };
 
     /*
      * Used to set the frequency
@@ -66,7 +66,7 @@ public:
     Q_INVOKABLE void reset();
 
 signals:
-    void connectedChanged();
+    void connectedChanged(bool);
     void frequencyChanged();
     void errorChange();
     void newData(RocketData data);
