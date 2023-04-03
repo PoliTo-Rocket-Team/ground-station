@@ -35,17 +35,17 @@ Window {
         }
         background: Rectangle {
             color: "#efefef";
-            radius: 6;
+            radius: 8;
         }
 
         Column {
-            spacing: 10;
+            spacing: 5;
             anchors.fill: parent;
             Text {
                 text: `${nofreq ? "Set" : "Change"} frequency`;
                 color: "#212121";
                 font {
-                    weight: 700;
+                    weight: Font.DemiBold;
                     pointSize: 18;
                 }
             }
@@ -53,22 +53,21 @@ Window {
                 text: "Please insert the frequency as it is required from the LoRa library. Range is from 0 to 81";
                 width: parent.width;
                 wrapMode: Text.WordWrap;
-                font.pointSize: 12;
+                bottomPadding: 15;
             }
             SpinBox {
                 id: frequency_input
                 stepSize: 1;
                 padding: 5;
-                font.pointSize: 14;
             }
             Row {
+                topPadding: 15
                 spacing: 10;
                 width: parent.width
                 layoutDirection: Qt.RightToLeft;
 
-                Button {
+                UIButton {
                     text: "Confirm";
-                    font.pointSize: 14;
                     onClicked: {
                         const v = frequency_input.value;
                         Antenna.setFrequency(v);
@@ -76,11 +75,10 @@ Window {
                         frequency_popup.close();
                     }
                 }
-                Button {
+                UIButton {
                     visible: !nofreq;
                     text: "Cancel";
                     onClicked: frequency_popup.close();
-                    font.pointSize: 14;
                 }
             }
         }
@@ -95,13 +93,12 @@ Window {
         Text {
             text: "Serial connection"
             font.pointSize: 20;
-            font.weight: 700;
+            font.weight: Font.Bold;
             width: parent.width;
             color: "#212121";
         }
         Text {
             text: "Waiting for a serial signal from the Arduino. If you haven't yet, please plug it in."
-            font.pointSize: 12;
             wrapMode: Text.WordWrap;
             width: parent.width;
             color: "#212121";
@@ -132,7 +129,7 @@ Window {
                     color: "#efefef"
                     font {
                         pointSize: 24;
-                        weight: 700;
+                        weight: Font.Bold;
                     }
                 }
                 Text {
@@ -140,8 +137,7 @@ Window {
                     color: "#efefef"
                 }
             }
-
-            Button {
+            UIButton {
                 anchors {
                     horizontalCenter: parent.horizontalCenter;
                     bottom: parent.bottom;
