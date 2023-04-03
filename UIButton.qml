@@ -2,26 +2,34 @@ import QtQuick 2.9
 import QtQuick.Controls 2.0
 
 Button {
-    id: controlBt
+    id: btn
     text: ""
+    flat: true;
+
 
     contentItem: Text {
         id: textual
-        text: controlBt.text
-        font: controlBt.font
+        text: btn.text
+        font.pointSize: 12;
+        font.weight: Font.DemiBold;
         opacity: enabled ? 1.0 : 0.3
-        color: controlBt.down ? "#17a81a" : "#21be2b"
+        color: btn.hovered ? "#efefef" : "#FA8650";
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
+        topPadding: 4;
+        bottomPadding: 4;
+        leftPadding: 8;
+        rightPadding: 8;
     }
 
     background: Rectangle {
-        implicitWidth: textual.width + 30
-        implicitHeight: textual.height + 15
         opacity: enabled ? 1 : 0.3
-        border.color: controlBt.down ? "#17a81a" : "#21be2b"
-        border.width: 1
-        radius: 2
+        color: btn.hovered ? "#FA8650" : "transparent";
+        radius: 4
+        border {
+            color: "#FA8650";
+            width: 2;
+        }
     }
 }
