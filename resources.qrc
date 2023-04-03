@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/JakartaSans">
+        <file alias="Bold">resources/JakartaSans/Bold.ttf</file>
+        <file alias="Light">resources/JakartaSans/Light.ttf</file>
+        <file alias="Medium">resources/JakartaSans/Medium.ttf</file>
+        <file alias="Regular">resources/JakartaSans/Regular.ttf</file>
+        <file alias="SemiBold">resources/JakartaSans/SemiBold.ttf</file>
+    </qresource>
+</RCC>
