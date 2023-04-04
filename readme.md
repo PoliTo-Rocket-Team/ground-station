@@ -19,13 +19,6 @@ All of the messages are simply forwarded by the GS LoRa, but some extra logic is
 
 When the rocket board startups or has changed the frequency, it trasmits repeatedly a [C] message. Upon receiving it, the GS LoRa forwards it to the app backend and sends it back to the rocket, ignoring any further `[C]` message received.
 
-### Frequency change
-
-After the GS LoRa forwards `[F]` with the new frequency:
-
- - If no `[C]` is received within 5 seconds, the GS LoRa sends `[E4]` to the app backend and switches to the old frequency;
- - Otherwise, the `[C]` is sent back to the rocket and forwarded to the backend (ignoring any further `[C]` from the rocket). 
-
 ### Errors codes
 
 | number | description |
@@ -33,4 +26,13 @@ After the GS LoRa forwards `[F]` with the new frequency:
 | 1 | IMU not working |
 | 2 | Barometer not working |
 | 3 | GPS not working |
-| 4 | Could not change frequency |
+
+## Flow charts
+
+### Bootstrap
+
+![bootstrap flowchart](./imgs/bootstrap.svg)
+
+### setFrequency
+
+![setFrequency flowchart](./imgs/setFrequency.svg)
