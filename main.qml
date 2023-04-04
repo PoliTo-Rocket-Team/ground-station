@@ -50,16 +50,31 @@ Window {
                 }
             }
             Text {
-                text: "Please insert the frequency as it is required from the LoRa library. Range is from 0 to 81";
+                text: "Please insert the desired frequency: range from 850 to 930 MHz";
                 width: parent.width;
                 wrapMode: Text.WordWrap;
                 bottomPadding: 15;
             }
-            SpinBox {
-                id: frequency_input
-                stepSize: 1;
-                padding: 5;
+            Row {
+                SpinBox {
+                    id: frequency_input
+                    from: 850; to: 930;
+                    stepSize: 1;
+                    value: 850;
+                    wheelEnabled: true
+                    width: 80
+                    background: Rectangle {
+                        radius: 3;
+                        color: "white";
+                        border.width: 0;
+                    }
+                }
+                Text {
+                    text: ".125 MHz"
+                    leftPadding: 2
+                }
             }
+
             Row {
                 topPadding: 15
                 spacing: 10;
@@ -69,7 +84,7 @@ Window {
                 UIButton {
                     text: "Confirm";
                     onClicked: {
-                        const v = frequency_input.value;
+                        const v = frequency_input.value - 850;
                         Antenna.setFrequency(v);
                         console.log("set freq");
                         frequency_popup.close();
@@ -133,7 +148,7 @@ Window {
                     }
                 }
                 Text {
-                    text: `Frequency = ${Antenna.frequency}`;
+                    text: `Frequency = ${Antenna.frequency + 850}.125 MHz`;
                     color: "#efefef"
                 }
             }
@@ -148,12 +163,13 @@ Window {
             }
         }
         Rectangle {
+            id: body;
             height: parent.height;
             width: parent.width - 300;
 
             Text {
-                anchors.centerIn: parent;
                 text: "Cool data"
+                anchors.centerIn: parent
             }
         }
     }
