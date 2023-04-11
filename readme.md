@@ -2,6 +2,15 @@
 
 QtQuick Ddesktop app of the ground station + Arduino code of the LoRa 
 
+## Contribute
+
+This application uses Qt 6.4.3 and the additional library QtCharts (which must be intsllaed from the Qt Maintenance tool). To set up the environement do the following:
+
+ 1. Clone the repository
+ 2. Qt Creator > File > Open File or Project
+ 3. Browse to the CMakeList.txt file
+ 4. Select the development kit (should be Qt 6.4.3)
+
 ## Messages
 
 | code | name | load type | load description | 
