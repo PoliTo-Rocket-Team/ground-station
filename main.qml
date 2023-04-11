@@ -1,12 +1,13 @@
 import QtQuick 2.9
 import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
 import Antenna 1.0
 
 Window {
     minimumWidth: 700
-    width: 900
+    width: 1200
     minimumHeight: 350
-    height: 500
+    height: 900
     visible: true
     title: "PRT - Ground Station"
     color: "#efefef";
@@ -16,8 +17,15 @@ Window {
         function onConnectedChanged(){
             frequency_popup.open();
         }
-        function onNewData() {
-
+        function onNewData(time, data) {;
+            acc_lin.add(time, data.acc_lin);
+            acc_ang.add(time, data.acc_ang);
+            barometer.add(time, data.barometer);
+        }
+        function onFrequencyChanged() {
+            acc_lin.clear();
+            acc_ang.clear();
+            barometer.clear();
         }
     }
 
@@ -70,7 +78,7 @@ Window {
                     }
                 }
                 Text {
-                    text: ".125 MHz"
+                    text: "MHz"
                     leftPadding: 2
                 }
             }
@@ -99,30 +107,17 @@ Window {
         }
     }
 
-
-    Column {
+    Message {
         anchors.centerIn: parent
-        visible: !Antenna.connected
+        visible: !Antenna.isArduinoConnected
         width: 400;
-
-        Text {
-            text: "Serial connection"
-            font.pointSize: 20;
-            font.weight: Font.Bold;
-            width: parent.width;
-            color: "#212121";
-        }
-        Text {
-            text: "Waiting for a serial signal from the Arduino. If you haven't yet, please plug it in."
-            wrapMode: Text.WordWrap;
-            width: parent.width;
-            color: "#212121";
-        }
+        title: "Serial connection";
+        description: "Waiting for a serial signal from the Arduino. If you haven't yet, please plug it in."
     }
 
     Grid {
         anchors.fill: parent;
-        visible: Antenna.connected;
+        visible: Antenna.isArduinoConnected;
         rows: 1; columns: 2;
 
         Rectangle {
@@ -148,7 +143,7 @@ Window {
                     }
                 }
                 Text {
-                    text: `Frequency = ${Antenna.frequency + 850}.125 MHz`;
+                    text: nofreq ? "No frequency set" : `Frequency = ${Antenna.frequency + 850}MHz`;
                     color: "#efefef"
                 }
             }
@@ -167,9 +162,45 @@ Window {
             height: parent.height;
             width: parent.width - 300;
 
-            Text {
-                text: "Cool data"
+            Message {
+                width: 350
                 anchors.centerIn: parent
+                visible: Antenna.state !== Antenna.CONNECTED;
+                title: Antenna.state === Antenna.POLLING ? "Polling" : "Disconnected";
+                description: Antenna.state === Antenna.POLLING
+                             ? `Waiting for a signal from the rocket at frequency ${Antenna.frequency+850} MHz`
+                             : nofreq ? "No frequency was selected" : "No signal was received from the rocket";
+            }
+
+            GridLayout {
+                visible: Antenna.state === Antenna.CONNECTED;
+                rows: 2;
+                columns: 2;
+                anchors {
+                    fill: parent;
+                    margins: 30;
+                }
+                VectorPlot {
+                    id: acc_lin;
+                    title: "Linear acceleration"
+                    Layout.fillWidth: true;
+                    Layout.fillHeight: true;
+                }
+                VectorPlot {
+                    id: acc_ang;
+                    title: "Angular acceleration"
+                    Layout.fillWidth: true;
+                    Layout.fillHeight: true;
+                }
+                VariablePlot {
+                    id: barometer;
+                    title: "Barometer";
+                    initialMin: 0;
+                    initialMax: 200;
+                    Layout.fillWidth: true;
+                    Layout.fillHeight: true;
+                    lineColor: "#f9a73e"
+                }
             }
         }
     }
