@@ -1,4 +1,4 @@
-#include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QFont>
 #include <QFontDatabase>
@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[])
 {
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
 
     int font_id = QFontDatabase::addApplicationFont(":/JakartaSans/Regular");
     QFontDatabase::addApplicationFont(":/JakartaSans/Bold");
@@ -20,6 +20,8 @@ int main(int argc, char *argv[])
     QString family = QFontDatabase::applicationFontFamilies(font_id).at(0);
     QFont font(family, 12);
     app.setFont(font);
+
+    // qRegisterMetaType<RocketData>();
 
     QScopedPointer<Antenna> antenna(new Antenna);
 
