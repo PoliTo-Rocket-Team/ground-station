@@ -6,7 +6,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.2 COMPONENTS Quick REQUIRED)
+find_package(Qt6 6.4.3 REQUIRED COMPONENTS Quick Charts)
 
 qt_add_executable(appground-station
     main.cpp
@@ -17,7 +17,7 @@ qt_add_executable(appground-station
 qt_add_qml_module(appground-station
     URI ground-station
     VERSION 1.0
-    QML_FILES main.qml UIButton.qml
+    QML_FILES main.qml UIButton.qml Message.qml VectorPlot.qml VariablePlot.qml
 )
 
 set_target_properties(appground-station PROPERTIES
@@ -29,7 +29,7 @@ set_target_properties(appground-station PROPERTIES
 )
 
 target_link_libraries(appground-station
-    PRIVATE Qt6::Quick)
+    PRIVATE Qt6::Quick Qt6::Charts)
 
 install(TARGETS appground-station
     BUNDLE DESTINATION .
