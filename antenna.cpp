@@ -2,6 +2,7 @@
 #include <QTimer>
 #include <QIODevice>
 #include <QSerialPort>
+#include <QSerialPortInfo>
 #include<QDebug>
 #include <unistd.h>
 #include <QRandomGenerator>
@@ -28,28 +29,15 @@ RocketData::RocketData(std::byte* raw)
 Antenna::Antenna(QObject *parent)
     : QObject{parent}
 {
-    QTimer::singleShot(30, this, &Antenna::__start);
+    __start();
     __timer = new QTimer(this);
     connect(__timer, &QTimer::timeout, this, &Antenna::__randomData);
-        arduino = new QSerialPort(this);
-    arduino = new QSerialPort(this);
-    openSerialPort();
-    QSerialPort::connect(arduino, SIGNAL(readyRead()), this, SLOT(readData()));
 }
 
 void Antenna::__start() {
-    emit connectedChanged(m_isArduinoConnected = true);
-
-    //    float choice = (float) rand() / (float) RAND_MAX;
-    //    if(choice < 0.4) {
-    //        m_connected = true;
-    //        emit connectedChanged(true);
-    //    }
-    //    else {
-    //        m_error = (choice < 0.6 ? 1 : choice < 0.8 ? 2 : 3);
-    //        emit errorChange();
-    //    }
-
+    arduino = new QSerialPort(this);
+    openSerialPort();
+    QSerialPort::connect(arduino, SIGNAL(readyRead()), this, SLOT(readData()));
 }
 
 float getRndAcc() {
@@ -86,18 +74,22 @@ void Antenna::setFrequency(quint8 f) {
 
 void Antenna::openSerialPort()
 {
+    const auto serialPortInfos = QSerialPortInfo::availablePorts();
+    for (const QSerialPortInfo &portInfo : serialPortInfos) {
+        if(portInfo.manufacturer().toLower().contains("arduino")){
+            arduino->setPortName(portInfo.systemLocation());
+            arduino->setBaudRate(QSerialPort::Baud9600);
+            arduino->setDataBits(QSerialPort::Data8);
+            arduino->setParity(QSerialPort::NoParity);
+            arduino->setStopBits(QSerialPort::OneStop);
+            arduino->setFlowControl(QSerialPort::NoFlowControl);
 
-    // TODO: use QSerialPortInfo to get port name
-    arduino->setPortName("/dev/ttyACM0");
-    arduino->setBaudRate(QSerialPort::Baud9600);
-    arduino->setDataBits(QSerialPort::Data8);
-    arduino->setParity(QSerialPort::NoParity);
-    arduino->setStopBits(QSerialPort::OneStop);
-    arduino->setFlowControl(QSerialPort::NoFlowControl);
-
-    if(!arduino->open(QIODevice::ReadWrite)){
-        qDebug() << (tr("error %1").arg(arduino->error()));
-        return;
+            if(!arduino->open(QIODevice::ReadWrite)){
+                qDebug() << (tr("error %1").arg(arduino->error()));
+                return;
+            }
+            break;
+        }
     }
 }
 
@@ -108,6 +100,7 @@ void Antenna::setConnected() {
     // sending ready signal to arduino
     arduino->write(data);
     arduino->waitForBytesWritten();
+    emit connectedChanged(m_isArduinoConnected = true);
 }
 
 void Antenna::readData()
