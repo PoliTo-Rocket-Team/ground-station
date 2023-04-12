@@ -84,12 +84,11 @@ private:
     quint8 m_frequency = 255;
 
     QTime m_startTime;
-    void setConnected();
     QSerialPort *arduino;
     void openSerialPort();
+    int sendToArduino(quint8 data);
 
     void __start();
-    void __setF();
     quint8 __f;
     QTimer *__timer;
     float __lastBaro = 0;

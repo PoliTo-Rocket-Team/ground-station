@@ -54,22 +54,15 @@ void Antenna::__randomData() {
     emit newData(m_startTime.secsTo(QTime::currentTime()), data);
 }
 
-void Antenna::__setF() {
-    const float choice = (float) rand() / (float) RAND_MAX;
-    if(choice < 0.5) {
-        emit stateChanged(m_state = State::DISCONNECTED);
-    }
-    else {
-        emit stateChanged(m_state = State::CONNECTED);
-        m_startTime = QTime::currentTime();
-        __timer->start(1000);
-    }
-}
-
 void Antenna::setFrequency(quint8 f) {
     emit frequencyChanged(m_frequency = f);
     emit stateChanged(m_state = State::POLLING);
-    QTimer::singleShot(1000, this, &Antenna::__setF);
+    sendToArduino('F');
+    sendToArduino(f);
+    QTimer::singleShot(5000, this, [this](){
+        if(m_state == State::POLLING)
+            emit stateChanged(m_state = State::DISCONNECTED);
+    });
 }
 
 void Antenna::openSerialPort()
@@ -93,25 +86,31 @@ void Antenna::openSerialPort()
     }
 }
 
-void Antenna::setConnected() {
-    QByteArray data;
-    // 0x42 == B
-    data.append(0x42);
-    // sending ready signal to arduino
-    arduino->write(data);
-    arduino->waitForBytesWritten();
-    emit connectedChanged(m_isArduinoConnected = true);
-}
-
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
-
-    if(data.at(0) == 0x52)
-        setConnected();
-
+    switch (data.at(0)){
+    case 'R':
+        // sending ready signal to arduino
+        sendToArduino('B');
+        emit connectedChanged(m_isArduinoConnected = true);
+        break;
+    case 'C':
+        emit stateChanged(m_state = State::CONNECTED);
+        m_startTime = QTime::currentTime();
+        __timer->start(1000);
+        break;
+    }
     qDebug() << "UART:" << data;
 
+}
+
+int Antenna::sendToArduino(quint8 data){
+    QByteArray payload;
+    payload.append(data);
+    int bytesWritten = arduino->write(payload);
+    arduino->waitForBytesWritten();
+    return bytesWritten;
 }
 
 void Antenna::reset(){

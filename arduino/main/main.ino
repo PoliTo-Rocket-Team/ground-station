@@ -1,4 +1,5 @@
 bool backend_connected = false;
+byte frequency = 0xFF;
 
 void setup() {
 
@@ -9,13 +10,13 @@ void setup() {
 }
 
 void loop() {
-
+/*
   // waiting for backend ready signal
-  if (backend_connected) {
+  if (backend_connected && frequency != 0xFF) {
 
     int randNumber;
     // COM CHECK
-    Serial.write('C');
+
     // Emulating errors
     randNumber = random(40);
     if (randNumber > 30) {
@@ -40,6 +41,7 @@ void loop() {
     Serial.write('O');
     delay(5000);
   }
+  */
 }
 
 /*
@@ -48,9 +50,24 @@ void loop() {
 */
 void serialEvent() {
   while (Serial.available()) {
-    char inChar = (char)Serial.read();
-    if (inChar == 'B') {
-      backend_connected = true;
+    char* inChar = (char*)malloc(1);
+    Serial.readBytes(inChar, 1);
+    switch (*inChar) {
+      case 'B':
+        {
+          backend_connected = true;
+          break;
+        }
+      case 'F':
+        {
+          Serial.readBytes(inChar, 1);
+          frequency = *inChar;
+          // emulating COM CHECK or no response
+          int randNumber = random(10);
+          if (randNumber > 5)
+            Serial.write('C');
+          break;
+        }
     }
   }
 }
