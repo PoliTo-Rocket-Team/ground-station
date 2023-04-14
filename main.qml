@@ -58,7 +58,7 @@ Window {
                 }
             }
             Text {
-                text: "Please insert the desired frequency: range from 850 to 930 MHz";
+                text: "Please insert the desired frequency: range goes from 850 to 930 MHz";
                 width: parent.width;
                 wrapMode: Text.WordWrap;
                 bottomPadding: 15;
@@ -132,7 +132,7 @@ Window {
                     right: parent.right;
                     margins: 20;
                 }
-                spacing: 30
+                spacing: 40
 
                 Text {
                     text: "Ground Station"
@@ -142,19 +142,65 @@ Window {
                         weight: Font.Bold;
                     }
                 }
-                Text {
-                    text: nofreq ? "No frequency set" : `Frequency = ${Antenna.frequency + 850}MHz`;
-                    color: "#efefef"
+                Column {
+                    spacing: 5;
+                    Text {
+                        text: "Frequency"
+                        color: "#efefef"
+                        font {
+                            pointSize: 14;
+                            weight: Font.Bold;
+                        }
+                    }
+                    Text {
+                        text: nofreq ? "Not set" : `${Antenna.frequency + 850}MHz`;
+                        color: "#efefef"
+                    }
+                    Item { width: 1; height: 3; }
+                    UIButton {
+                        text: "Change";
+                        onClicked: frequency_popup.open();
+                    }
                 }
-            }
-            UIButton {
-                anchors {
-                    horizontalCenter: parent.horizontalCenter;
-                    bottom: parent.bottom;
-                    bottomMargin: 20;
+                Column {
+                    spacing: 5;
+                    Text {
+                        text: "Parachute"
+                        color: "#efefef"
+                        font {
+                            pointSize: 14;
+                            weight: Font.Bold;
+                        }
+                    }
+                    Text {
+                        text: "Target height = 4000m";
+                        color: "#efefef";
+                    }
+                    Text {
+                        text: "No parachute deployed";
+                        color: "#efefef";
+                    }
                 }
-                text: "Change frequency";
-                onClicked: frequency_popup.open();
+                Column {
+                    spacing: 5;
+                    Text {
+                        text: "Graphs"
+                        color: "#efefef"
+                        font {
+                            pointSize: 14;
+                            weight: Font.Bold;
+                        }
+                    }
+                    Item { width: 1; height: 3; }
+                    UIButton {
+                        text: "Reset axis";
+                        onClicked: {
+                            acc_lin.clear();
+                            acc_ang.clear();
+                            barometer.clear();
+                        }
+                    }
+                }
             }
         }
         Rectangle {
@@ -172,8 +218,25 @@ Window {
                              : nofreq ? "No frequency was selected" : "No signal was received from the rocket";
             }
 
+            Message {
+                width: 350
+                anchors.centerIn: parent
+                visible: Antenna.state === Antenna.CONNECTED && Antenna.error !== 0;
+                title: `${getFaultingComponent(Antenna.error)} not working`;
+                description: `Error #${Antenna.error}`
+
+                function getFaultingComponent(code) {
+                    switch(code) {
+                    case 1: return "IMU";
+                    case 2: return "Barometer";
+                    case 3: return "GPS";
+                    default: return "Something"
+                    }
+                }
+            }
+
             GridLayout {
-                visible: Antenna.state === Antenna.CONNECTED;
+                visible: Antenna.state === Antenna.CONNECTED && Antenna.error === 0;
                 rows: 2;
                 columns: 2;
                 anchors {
