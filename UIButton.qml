@@ -17,8 +17,8 @@ Button {
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
-        topPadding: 4;
-        bottomPadding: 4;
+        topPadding: 3;
+        bottomPadding: 3;
         leftPadding: 8;
         rightPadding: 8;
     }
