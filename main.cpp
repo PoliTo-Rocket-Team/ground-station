@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QQmlApplicationEngine>
+#include <QIcon>
 #include <QFont>
 #include <QFontDatabase>
 #include "antenna.h"
@@ -10,6 +11,7 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    app.setWindowIcon(QIcon(":/imgs/icon"));
 
     int font_id = QFontDatabase::addApplicationFont(":/JakartaSans/Regular");
     QFontDatabase::addApplicationFont(":/JakartaSans/Bold");

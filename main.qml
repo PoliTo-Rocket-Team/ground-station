@@ -4,9 +4,9 @@ import QtQuick.Layouts 1.15
 import Antenna 1.0
 
 Window {
-    minimumWidth: 700
+    minimumWidth: 900
     width: 1200
-    minimumHeight: 350
+    minimumHeight: 600
     height: 900
     visible: true
     title: "PRT - Ground Station"
@@ -94,7 +94,6 @@ Window {
                     onClicked: {
                         const v = frequency_input.value - 850;
                         Antenna.setFrequency(v);
-                        console.log("set freq");
                         frequency_popup.close();
                     }
                 }
@@ -121,6 +120,7 @@ Window {
         rows: 1; columns: 2;
 
         Rectangle {
+            id: sidebar;
             color: "#212121"
             height: parent.height;
             width: 300;
@@ -200,6 +200,21 @@ Window {
                             barometer.clear();
                         }
                     }
+                }
+            }
+            Image {
+                id: logo
+                source: "qrc:///imgs/logo"
+                width: 100;
+                height: width * 289/600;
+                sourceSize {
+                    width: 600;
+                    height: 289
+                }
+                anchors {
+                    bottom: parent.bottom;
+                    bottomMargin: 20;
+                    horizontalCenter: parent.horizontalCenter;
                 }
             }
         }
