@@ -17,7 +17,7 @@ qt_add_executable(appground-station
 qt_add_qml_module(appground-station
     URI ground-station
     VERSION 1.0
-    QML_FILES main.qml UIButton.qml Message.qml VectorPlot.qml VariablePlot.qml
+    QML_FILES main.qml UIButton.qml Message.qml VectorPlot.qml VariablePlot.qml UISwitch.qml
 )
 
 set_target_properties(appground-station PROPERTIES

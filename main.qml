@@ -162,25 +162,25 @@ Window {
                         onClicked: frequency_popup.open();
                     }
                 }
-                Column {
-                    spacing: 5;
-                    Text {
-                        text: "Parachute"
-                        color: "#efefef"
-                        font {
-                            pointSize: 14;
-                            weight: Font.Bold;
-                        }
-                    }
-                    Text {
-                        text: "Target height = 4000m";
-                        color: "#efefef";
-                    }
-                    Text {
-                        text: "No parachute deployed";
-                        color: "#efefef";
-                    }
-                }
+//                Column {
+//                    spacing: 5;
+//                    Text {
+//                        text: "Parachute"
+//                        color: "#efefef"
+//                        font {
+//                            pointSize: 14;
+//                            weight: Font.Bold;
+//                        }
+//                    }
+//                    Text {
+//                        text: "Target height = 4000m";
+//                        color: "#efefef";
+//                    }
+//                    Text {
+//                        text: "No parachute deployed";
+//                        color: "#efefef";
+//                    }
+//                }
                 Column {
                     spacing: 5;
                     Text {
@@ -191,6 +191,11 @@ Window {
                             weight: Font.Bold;
                         }
                     }
+                    UISwitch {
+                        id: adaptive;
+                        text: "Adaptive";
+                    }
+
                     Item { width: 1; height: 3; }
                     UIButton {
                         text: "Reset axis";
@@ -207,6 +212,7 @@ Window {
                 source: "qrc:///imgs/logo"
                 width: 100;
                 height: width * 289/600;
+                smooth: true;
                 sourceSize {
                     width: 600;
                     height: 289
@@ -261,23 +267,28 @@ Window {
                 VectorPlot {
                     id: acc_lin;
                     title: "Linear acceleration"
+                    minTimeDelta: 60;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
                 }
                 VectorPlot {
                     id: acc_ang;
                     title: "Angular acceleration"
+                    minTimeDelta: 60;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
                 }
                 VariablePlot {
                     id: barometer;
                     title: "Barometer";
-                    initialMin: 0;
-                    initialMax: 200;
+                    min: 300;
+                    max: 1100;
+                    minTimeDelta: 60;
+                    spacing: 10;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
                     lineColor: "#f9a73e"
+                    adaptive: adaptive.checked;
                 }
             }
         }
