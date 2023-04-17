@@ -22,7 +22,7 @@ RocketData::RocketData(std::byte* raw)
 Antenna::Antenna(QObject *parent)
     : QObject{parent}
 {
-    QTimer::singleShot(3000, this, &Antenna::__start);
+    QTimer::singleShot(30, this, &Antenna::__start);
     __timer = new QTimer(this);
     connect(__timer, &QTimer::timeout, this, &Antenna::__randomData);
 }
@@ -48,9 +48,9 @@ float getRndAcc() {
 
 void Antenna::__randomData() {
     RocketData data{};
-    data.barometer = (__lastBaro += QRandomGenerator::global()->generateDouble());
-    data.lat = 45;
-    data.lng = 12;
+    data.barometer = (__lastBaro -= QRandomGenerator::global()->generateDouble());
+    // data.lat = 45;
+    // data.lng = 12;
     data.acc_lin = QVector3D(getRndAcc(),getRndAcc(),getRndAcc());
     data.acc_ang = QVector3D(getRndAcc(),getRndAcc(),getRndAcc());
     emit newData(m_startTime.secsTo(QTime::currentTime()), data);
@@ -58,7 +58,7 @@ void Antenna::__randomData() {
 
 void Antenna::__setF() {
     const float choice = (float) rand() / (float) RAND_MAX;
-    if(choice < 0.5) {
+    if(choice < 0) {
         emit stateChanged(m_state = State::DISCONNECTED);
     }
     else {

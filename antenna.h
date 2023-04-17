@@ -9,13 +9,13 @@
 struct RocketData {
     Q_GADGET
     Q_PROPERTY(float barometer MEMBER barometer);
-    Q_PROPERTY(float latitude MEMBER lat);
-    Q_PROPERTY(float longitude MEMBER lng);
+    // Q_PROPERTY(float latitude MEMBER lat);
+    // Q_PROPERTY(float longitude MEMBER lng);
     Q_PROPERTY(QVector3D acc_lin MEMBER acc_lin);
     Q_PROPERTY(QVector3D acc_ang MEMBER acc_ang);
 public:
     float barometer;
-    float lat, lng;
+    // float lat, lng;
     QVector3D acc_lin, acc_ang;
     RocketData(std::byte* raw);
     RocketData() = default;
@@ -88,7 +88,7 @@ private:
     void __setF();
     quint8 __f;
     QTimer *__timer;
-    float __lastBaro = 0;
+    float __lastBaro = 1013;
     void __randomData();
 
 
