@@ -69,7 +69,7 @@ void Antenna::openSerialPort()
 {
     const auto serialPortInfos = QSerialPortInfo::availablePorts();
     for (const QSerialPortInfo &portInfo : serialPortInfos) {
-        if(portInfo.manufacturer().toLower().contains("arduino")){
+        if(portInfo.manufacturer().toLower().contains("arduino") || portInfo.description().toLower().contains("arduino")){
             arduino->setPortName(portInfo.systemLocation());
             arduino->setBaudRate(QSerialPort::Baud9600);
             arduino->setDataBits(QSerialPort::Data8);
