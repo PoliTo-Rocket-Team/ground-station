@@ -87,6 +87,8 @@ private:
     QSerialPort *arduino;
     void openSerialPort();
     int sendToArduino(quint8 data);
+    QByteArray buffer;
+    void handleBuffer();
 
     void __start();
     quint8 __f;

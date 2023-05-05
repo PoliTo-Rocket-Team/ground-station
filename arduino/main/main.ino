@@ -1,6 +1,6 @@
 #include "LoRa_E220.h"
 
-LoRa_E220 e220ttl(&Serial1, 3, 7, 6);  //  RX AUX M0 M1
+LoRa_E220 e220ttl(&Serial1, 3, 4, 6);  //  RX AUX M0 M1
 
 bool backend_connected = false;
 byte frequency = 0xFF;
@@ -10,6 +10,8 @@ void setup() {
   Serial.begin(9600);
   randomSeed(analogRead(0));
   // Sending Ready Signal to Backend
+  Serial.write('R');
+  Serial.write('\0');
   e220ttl.begin();
   delay(500);
 }
@@ -26,41 +28,54 @@ void loop() {
         {
           Serial.readBytes(&inChar, 1);
           frequency = inChar;
-
+          char msg[2] = { 'F', frequency };
+          // Sending msg to the rocket on current freq to change freq
+          ResponseStatus rs = e220ttl.sendMessage(msg);
+          // Switching freq on GS Antenna to new freq
           ResponseStructContainer c = e220ttl.getConfiguration();
           Configuration configuration = *((Configuration*)c.data);
-          Serial.println("GET CONFIG RESPONSE");
-          Serial.println(c.status.getResponseDescription());
-          Serial.println(c.status.code);
-          printParameters(configuration);
 
           configuration.CHAN = frequency;
-          ResponseStatus rs = e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
-
-          Serial.println("SET FREQ RESPONSE");
-          Serial.println(rs.getResponseDescription());
-          Serial.println(rs.code);
+          rs = e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
           c.close();
-          // emulating COM CHECK or no response
-          int randNumber = random(10);
-          if (randNumber > 5) {
-            Serial.write('C');
-            ResponseStatus rs = e220ttl.sendMessage("Hello, world?");
-            // Check If there is some problem of succesfully send
-            Serial.println(rs.getResponseDescription());
-          }
+          // TODO: REMOVE
+          Serial.write('C');
+          Serial.write('\0');
           break;
         }
     }
   }
-  if (frequency == 0xFF) {
-    if (!backend_connected) {
-      Serial.print('R');
-      delay(500);
+
+  delay(350);
+
+  if (e220ttl.available() > 1) {
+    Serial.println("Message available");
+    ResponseContainer rc = e220ttl.receiveMessage();
+
+    if (rc.status.code != 1) {
+      Serial.println(rc.status.getResponseDescription());
+    } else {
+      // Print the data received
+      Serial.println(rc.status.getResponseDescription());
+      Serial.println(rc.data);
     }
-    return;
-  }
-  /*
+
+    switch (rc.data[0]) {
+      // Listening for 'C' from the rocket, meaning succesful freq switch
+      case 'C':
+        Serial.println("C received, sending C");
+        delay(450);
+        ResponseStatus rs = e220ttl.sendMessage("C");
+        Serial.println(rs.getResponseDescription());
+        Serial.write('C');
+        Serial.write('\0');
+        break;
+      default:
+        Serial.write(rc.data.c_str());
+        Serial.write('\0');
+        break;
+    }
+    /*
   // waiting for backend ready signal
   if (backend_connected && frequency != 0xFF) {
 
@@ -92,7 +107,9 @@ void loop() {
     delay(5000);
   }
   */
+  }
 }
+
 
 void printParameters(struct Configuration configuration) {
   DEBUG_PRINTLN("----------------------------------------");

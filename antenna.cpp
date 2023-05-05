@@ -27,7 +27,8 @@ RocketData::RocketData(std::byte* raw)
 
 
 Antenna::Antenna(QObject *parent)
-    : QObject{parent}
+    : QObject{parent},
+      buffer()
 {
     __start();
     __timer = new QTimer(this);
@@ -89,20 +90,32 @@ void Antenna::openSerialPort()
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
-    switch (data.at(0)){
+    buffer.append(data);
+    for (QChar b : qAsConst(buffer))
+        if (b == '\0'){
+            handleBuffer();
+            buffer.clear();
+        }
+
+    qDebug() << "UART:" << data;
+}
+
+void Antenna::handleBuffer(){
+    switch (buffer.at(0)){
     case 'R':
-        // sending ready signal to arduino
-        sendToArduino('B');
-        emit connectedChanged(m_isArduinoConnected = true);
+        if(!m_isArduinoConnected){
+            // sending ready signal to arduino
+            sendToArduino('B');
+            emit connectedChanged(m_isArduinoConnected = true);}
         break;
     case 'C':
-        emit stateChanged(m_state = State::CONNECTED);
-        m_startTime = QTime::currentTime();
-        __timer->start(1000);
+        if(m_state != State::CONNECTED){
+            emit stateChanged(m_state = State::CONNECTED);
+            m_startTime = QTime::currentTime();
+            __timer->start(1000);
+        }
         break;
     }
-    qDebug() << "UART:" << data;
-
 }
 
 int Antenna::sendToArduino(quint8 data){
