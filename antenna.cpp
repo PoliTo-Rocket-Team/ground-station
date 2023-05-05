@@ -17,7 +17,7 @@ QVector3D vectorFromBytes(std::byte* raw) {
 
 RocketData::RocketData(std::byte* raw)
     : acc_lin(vectorFromBytes(raw+12)),
-      acc_ang(vectorFromBytes(raw+24))
+    acc_ang(vectorFromBytes(raw+24))
 {
     std::memcpy(&barometer, raw, 4);
     std::memcpy(&barometer, raw+4, 4);
@@ -28,18 +28,17 @@ RocketData::RocketData(std::byte* raw)
 
 Antenna::Antenna(QObject *parent)
     : QObject{parent},
-      buffer()
+    buffer()
 {
-    __start();
     __timer = new QTimer(this);
+    scanTimer = new QTimer(this);
     connect(__timer, &QTimer::timeout, this, &Antenna::__randomData);
+    connect(scanTimer,&QTimer::timeout,this,&Antenna::openSerialPort);
+    arduino = new QSerialPort(this);
+    QSerialPort::connect(arduino, SIGNAL(readyRead()), this, SLOT(readData()));
+    scanTimer->start(1000);
 }
 
-void Antenna::__start() {
-    arduino = new QSerialPort(this);
-    openSerialPort();
-    QSerialPort::connect(arduino, SIGNAL(readyRead()), this, SLOT(readData()));
-}
 
 float getRndAcc() {
     return (QRandomGenerator::global()->generateDouble() * 6.0) - 3.0;
@@ -82,6 +81,7 @@ void Antenna::openSerialPort()
                 qDebug() << (tr("error %1").arg(arduino->error()));
                 return;
             }
+            scanTimer->stop();
             break;
         }
     }
@@ -95,6 +95,7 @@ void Antenna::readData()
         if (b == '\0'){
             handleBuffer();
             buffer.clear();
+            break;
         }
 
     qDebug() << "UART:" << data;

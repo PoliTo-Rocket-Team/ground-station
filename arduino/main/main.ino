@@ -8,10 +8,6 @@ byte frequency = 0xFF;
 void setup() {
 
   Serial.begin(9600);
-  randomSeed(analogRead(0));
-  // Sending Ready Signal to Backend
-  Serial.write('R');
-  Serial.write('\0');
   e220ttl.begin();
   delay(500);
 }
@@ -44,6 +40,13 @@ void loop() {
           break;
         }
     }
+  }
+
+  if (!backend_connected) {
+    // Sending Ready Signal to Backend
+    Serial.write('R');
+    Serial.write('\0');
+    return;
   }
 
   delay(350);

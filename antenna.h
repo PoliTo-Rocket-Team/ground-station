@@ -93,6 +93,7 @@ private:
     void __start();
     quint8 __f;
     QTimer *__timer;
+    QTimer *scanTimer;
     float __lastBaro = 1013;
     void __randomData();
 
