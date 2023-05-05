@@ -116,6 +116,8 @@ void Antenna::handleBuffer(){
             __timer->start(1000);
         }
         break;
+    case 'E':
+        emit errorChange(m_error = buffer.at(1) - '0');
     }
 }
 

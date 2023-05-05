@@ -104,7 +104,7 @@ signals:
     void connectedChanged(bool);
     void stateChanged(Antenna::State state);
     void frequencyChanged(quint8 f);
-    void errorChange();
+    void errorChange(quint8 e);
     void newData(int ms, RocketData data);
     void rollback();
 };
