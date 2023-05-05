@@ -94,8 +94,7 @@ private:
     quint8 __f;
     QTimer *__timer;
     QTimer *scanTimer;
-    float __lastBaro = 1013;
-    void __randomData();
+    float packFloat(int index);
 
 private slots:
     void readData();

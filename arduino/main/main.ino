@@ -6,7 +6,7 @@ bool backend_connected = false;
 byte frequency = 0xFF;
 
 void setup() {
-
+  randomSeed(analogRead(0));
   Serial.begin(9600);
   e220ttl.begin();
   delay(500);
@@ -29,7 +29,7 @@ void loop() {
           ResponseStatus rs = e220ttl.sendMessage(msg);
           // Switching freq on GS Antenna to new freq
           ResponseStructContainer c = e220ttl.getConfiguration();
-          Configuration configuration = *((Configuration*)c.data);
+          Configuration configuration = *((Configuration *)c.data);
 
           configuration.CHAN = frequency;
           rs = e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
@@ -79,6 +79,35 @@ void loop() {
         break;
     }
   }
+  // Emulating data
+  Serial.write('D');
+  float bar = randomFloat(0, 10);
+  byte *b = (byte *)&bar;
+  Serial.write(b, 4);
+  float lax = randomFloat(0, 10);
+  b = (byte *)&lax;
+  Serial.write(b, 4);
+  float lay = randomFloat(0, 10);
+  b = (byte *)&lay;
+  Serial.write(b, 4);
+  float laz = randomFloat(0, 10);
+  b = (byte *)&laz;
+  Serial.write(b, 4);
+  float aax = randomFloat(0, 10);
+  b = (byte *)&aax;
+  Serial.write(b, 4);
+  float aay = randomFloat(0, 10);
+  b = (byte *)&aay;
+  Serial.write(b, 4);
+  float aaz = randomFloat(0, 10);
+  b = (byte *)&aaz;
+  Serial.write(b, 4);
+  Serial.write('\0');
+  delay(1000);
+}
+
+float randomFloat(float minf, float maxf) {
+  return minf + random(1UL << 31) * (maxf - minf) / (1UL << 31);  // use 1ULL<<63 for max double values)
 }
 
 

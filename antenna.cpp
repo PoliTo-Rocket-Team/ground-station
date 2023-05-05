@@ -24,34 +24,16 @@ RocketData::RocketData(std::byte* raw)
     std::memcpy(&barometer, raw+8, 4);
 }
 
-
-
 Antenna::Antenna(QObject *parent)
     : QObject{parent},
     buffer()
 {
     __timer = new QTimer(this);
     scanTimer = new QTimer(this);
-    connect(__timer, &QTimer::timeout, this, &Antenna::__randomData);
     connect(scanTimer,&QTimer::timeout,this,&Antenna::openSerialPort);
     arduino = new QSerialPort(this);
     QSerialPort::connect(arduino, SIGNAL(readyRead()), this, SLOT(readData()));
     scanTimer->start(1000);
-}
-
-
-float getRndAcc() {
-    return (QRandomGenerator::global()->generateDouble() * 6.0) - 3.0;
-}
-
-void Antenna::__randomData() {
-    RocketData data{};
-    data.barometer = (__lastBaro -= QRandomGenerator::global()->generateDouble());
-    // data.lat = 45;
-    // data.lng = 12;
-    data.acc_lin = QVector3D(getRndAcc(),getRndAcc(),getRndAcc());
-    data.acc_ang = QVector3D(getRndAcc(),getRndAcc(),getRndAcc());
-    emit newData(m_startTime.secsTo(QTime::currentTime()), data);
 }
 
 void Antenna::setFrequency(quint8 f) {
@@ -118,7 +100,33 @@ void Antenna::handleBuffer(){
         break;
     case 'E':
         emit errorChange(m_error = buffer.at(1) - '0');
+        break;
+    case 'D':
+        float bar = packFloat(1);
+        float l_accx = packFloat(5);
+        float l_accy = packFloat(9);
+        float l_accz = packFloat(13);
+        float a_accx = packFloat(17);
+        float a_accy = packFloat(21);
+        float a_accz = packFloat(25);
+
+        RocketData data{};
+        data.barometer = (bar);
+        data.acc_lin = QVector3D(l_accx,l_accy,l_accz);
+        data.acc_ang = QVector3D(a_accx,a_accy,a_accz);
+        emit newData(m_startTime.secsTo(QTime::currentTime()), data);
+        break;
     }
+}
+
+float Antenna::packFloat(int index){
+    char bytes[4];
+    float f;
+    for (int i = 0; i < 4; i++)
+        bytes[i] = buffer.at(index + i);
+    memcpy(&f, &bytes, sizeof(f));
+    return f;
+
 }
 
 int Antenna::sendToArduino(quint8 data){
