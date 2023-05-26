@@ -16,6 +16,7 @@ struct RocketData {
     Q_PROPERTY(QVector3D acc_ang MEMBER acc_ang);
 public:
     float barometer;
+    float temperature;
     // float lat, lng;
     QVector3D acc_lin, acc_ang;
     RocketData(std::byte* raw);
@@ -65,7 +66,8 @@ private:
      * It is false at startup and during frequency change. Becomes true upon receiving [C]
      */
     bool m_isArduinoConnected = false;
-
+    // +1 for the packet code
+    int PACKET_SIZE = sizeof(RocketData) + 1;
     State m_state = State::DISCONNECTED;
     /*
      * Error code

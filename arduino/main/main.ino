@@ -1,9 +1,22 @@
 #include "LoRa_E220.h"
 
-LoRa_E220 e220ttl(&Serial1, 3, 4, 6);  //  RX AUX M0 M1
+LoRa_E220 e220ttl(&Serial1, 2, 4, 6);  //  RX AUX M0 M1
 
 bool backend_connected = false;
 byte frequency = 0xFF;
+
+struct Packet {
+  char startSeq;
+  char code;
+  float bar;
+  float temp;
+  float al_x;
+  float al_y;
+  float al_z;
+  float aa_x;
+  float aa_y;
+  float aa_z;
+};
 
 void setup() {
   randomSeed(analogRead(0));
@@ -31,12 +44,13 @@ void loop() {
           ResponseStructContainer c = e220ttl.getConfiguration();
           Configuration configuration = *((Configuration *)c.data);
 
-          configuration.CHAN = frequency;
+          configuration.CHAN = 23;
           rs = e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
           c.close();
           // TODO: REMOVE
-          Serial.write('C');
-          Serial.write('\0');
+          struct Packet packet = { 0xAA, 'C', 0, 0, 0, 0, 0, 0, 0, 0 };
+          Serial.write((byte *)&packet, sizeof(Packet));
+
           break;
         }
     }
@@ -44,66 +58,54 @@ void loop() {
 
   if (!backend_connected) {
     // Sending Ready Signal to Backend
-    Serial.write('R');
-    Serial.write('\0');
+    struct Packet packet = { 0xAA, 'R', 0, 0, 0, 0, 0, 0, 0, 0 };
+    Serial.write((byte *)&packet, sizeof(Packet));
     return;
   }
 
-  delay(350);
+  //delay(350);
 
   if (e220ttl.available() > 1) {
-    Serial.println("Message available");
-    ResponseContainer rc = e220ttl.receiveMessage();
 
-    if (rc.status.code != 1) {
-      Serial.println(rc.status.getResponseDescription());
-    } else {
-      // Print the data received
-      Serial.println(rc.status.getResponseDescription());
-      Serial.println(rc.data);
-    }
+    struct AntennaData {  // Partial structure without type and start sequence
+      float bar;
+      float temp;
+      float al_x;
+      float al_y;
+      float al_z;
+      float aa_x;
+      float aa_y;
+      float aa_z;
+    };
+    char code;  // first part of structure
+    ResponseContainer rs = e220ttl.receiveInitialMessage(sizeof(code));
+    // Put string in a char array (not needed)
+    memcpy(&code, rs.data.c_str(), sizeof(code));
 
-    switch (rc.data[0]) {
-      // Listening for 'C' from the rocket, meaning succesful freq switch
+    switch (code) {
       case 'C':
-        Serial.println("C received, sending C");
+        // Listening for 'C' from the rocket, meaning succesful freq switch
         delay(450);
-        ResponseStatus rs = e220ttl.sendMessage("C");
-        Serial.println(rs.getResponseDescription());
+        e220ttl.sendMessage("C");
         Serial.write('C');
         Serial.write('\0');
         break;
       default:
-        Serial.write(rc.data.c_str());
-        Serial.write('\0');
+        // Read the rest of structure
+        ResponseStructContainer rsc = e220ttl.receiveMessageRSSI(sizeof(AntennaData));
+        struct AntennaData data = *(AntennaData *)rsc.data;
+        struct Packet packet = {0xAA, code, data.bar, data.temp, data.al_x, data.al_y, data.al_z, data.aa_x, data.aa_y, data.aa_z};
+        Serial.write((byte*)&packet, sizeof(Packet));
+        rsc.close();
         break;
     }
   }
-  // Emulating data
-  Serial.write('D');
-  float bar = randomFloat(0, 10);
-  byte *b = (byte *)&bar;
-  Serial.write(b, 4);
-  float lax = randomFloat(0, 10);
-  b = (byte *)&lax;
-  Serial.write(b, 4);
-  float lay = randomFloat(0, 10);
-  b = (byte *)&lay;
-  Serial.write(b, 4);
-  float laz = randomFloat(0, 10);
-  b = (byte *)&laz;
-  Serial.write(b, 4);
-  float aax = randomFloat(0, 10);
-  b = (byte *)&aax;
-  Serial.write(b, 4);
-  float aay = randomFloat(0, 10);
-  b = (byte *)&aay;
-  Serial.write(b, 4);
-  float aaz = randomFloat(0, 10);
-  b = (byte *)&aaz;
-  Serial.write(b, 4);
-  Serial.write('\0');
-  delay(1000);
+  /*
+  Packet packet = { 0xAA, 'D', randomFloat(300,1100),randomFloat(1,10), randomFloat(1,10), randomFloat(1,10), randomFloat(1,10), randomFloat(1,10), randomFloat(1,10), randomFloat(1,10) };
+ 
+  Serial.write((byte *)&packet, sizeof(Packet));
+  */
+  delay(500);
 }
 
 float randomFloat(float minf, float maxf) {

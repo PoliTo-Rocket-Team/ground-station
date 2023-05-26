@@ -72,14 +72,18 @@ void Antenna::openSerialPort()
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
-    buffer.append(data);
-    for (QChar b : qAsConst(buffer))
-        if (b == '\0'){
-            handleBuffer();
-            buffer.clear();
-            break;
-        }
-
+    for (int i = 0; i < data.size(); i++){
+        // 0xAA == start/end sequence identifier
+        if (data.at(i) == (char)0xAA){
+            if(buffer.size() == PACKET_SIZE){
+                handleBuffer();
+                buffer.clear();
+            } else
+                // discard incomplete packet
+                buffer.clear();
+        } else
+            buffer.append(data.at(i));
+    }
     qDebug() << "UART:" << data;
 }
 
@@ -103,15 +107,17 @@ void Antenna::handleBuffer(){
         break;
     case 'D':
         float bar = packFloat(1);
-        float l_accx = packFloat(5);
-        float l_accy = packFloat(9);
-        float l_accz = packFloat(13);
-        float a_accx = packFloat(17);
-        float a_accy = packFloat(21);
-        float a_accz = packFloat(25);
+        float temperature = packFloat(5);
+        float l_accx = packFloat(9);
+        float l_accy = packFloat(13);
+        float l_accz = packFloat(17);
+        float a_accx = packFloat(21);
+        float a_accy = packFloat(25);
+        float a_accz = packFloat(29);
 
         RocketData data{};
         data.barometer = (bar);
+        data.temperature = temperature;
         data.acc_lin = QVector3D(l_accx,l_accy,l_accz);
         data.acc_ang = QVector3D(a_accx,a_accy,a_accz);
         emit newData(m_startTime.secsTo(QTime::currentTime()), data);
