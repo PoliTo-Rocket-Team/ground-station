@@ -26,7 +26,8 @@ RocketData::RocketData(std::byte* raw)
 
 Antenna::Antenna(QObject *parent)
     : QObject{parent},
-    buffer()
+    buffer(),
+    packet()
 {
     __timer = new QTimer(this);
     scanTimer = new QTimer(this);
@@ -72,19 +73,46 @@ void Antenna::openSerialPort()
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
-    for (int i = 0; i < data.size(); i++){
+    /*
+    char buf[1024];
+    while(arduino->canReadLine()){
+        arduino->readLine(buf, sizeof(buf));
+        handleBuffer(buf);
+    }
+*/
+    packet.append(data);
+    if(packet.size() >= PACKET_SIZE){
+        readPacket();
+        packet.clear();
+    }
+    qDebug() << "UART:" << data;
+}
+
+void Antenna::readPacket() {
+    for (int i = 0; i < packet.size(); i++){
         // 0xAA == start/end sequence identifier
-        if (data.at(i) == (char)0xAA){
+        if (packet.at(i) == (char)'\xAA'){
+            readingPacket = true;
+            continue;
+        }
+        else if(packet.at(i) == (char)'\xBB'){
             if(buffer.size() == PACKET_SIZE){
                 handleBuffer();
                 buffer.clear();
             } else
                 // discard incomplete packet
                 buffer.clear();
-        } else
-            buffer.append(data.at(i));
+            readingPacket = false;
+            continue;
+        } else if(readingPacket)
+            buffer.append(packet.at(i));
     }
-    qDebug() << "UART:" << data;
+
+    if(buffer.size() == PACKET_SIZE){
+        handleBuffer();
+        buffer.clear();
+    }
+
 }
 
 void Antenna::handleBuffer(){
@@ -114,6 +142,14 @@ void Antenna::handleBuffer(){
         float a_accx = packFloat(21);
         float a_accy = packFloat(25);
         float a_accz = packFloat(29);
+        qDebug() << "bar:" << bar;
+        qDebug() << "temp:" << temperature;
+        qDebug() << "acc linx:" <<  l_accx;
+        qDebug() << "acc liny:" << l_accy;
+        qDebug() << "acc linz:" << l_accz;
+        qDebug() << "acc angx:" << a_accx;
+        qDebug() << "acc angy:" << a_accy;
+        qDebug() << "acc angz:" << a_accz;
 
         RocketData data{};
         data.barometer = (bar);
