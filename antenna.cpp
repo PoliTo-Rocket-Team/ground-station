@@ -26,7 +26,8 @@ RocketData::RocketData(std::byte* raw)
 
 Antenna::Antenna(QObject *parent)
     : QObject{parent},
-    buffer()
+    buffer(),
+    packet()
 {
     __timer = new QTimer(this);
     scanTimer = new QTimer(this);
@@ -72,23 +73,39 @@ void Antenna::openSerialPort()
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
-    for (int i = 0; i < data.size(); i++){
-        // 0xAA == start/end sequence identifier
-        if (data.at(i) == (char)0xAA){
-            if(buffer.size() == PACKET_SIZE){
-                handleBuffer();
-                buffer.clear();
-            } else
-                // discard incomplete packet
-                buffer.clear();
-        } else
-            buffer.append(data.at(i));
-    }
+    buffer.append(data);
+    readBuffer();
+
     qDebug() << "UART:" << data;
 }
 
-void Antenna::handleBuffer(){
-    switch (buffer.at(0)){
+void Antenna::readBuffer() {
+    bool readingPacket = false;
+    for (int i = 0; i < buffer.size(); i++){
+        // 0xAA == start sequence identifier
+        if (buffer.at(i) == (char)'\xAA'){
+            readingPacket = true;
+            continue;
+        }
+        // 0xBB == end sequence identifier
+        else if(buffer.at(i) == (char)'\xBB'){
+            if(packet.size() == PACKET_SIZE){
+                handlePacket();
+                packet.clear();
+                // shifts the buffer left
+                buffer = buffer.last(buffer.size() - i);
+            } else
+                // discard incomplete packet
+                packet.clear();
+            readingPacket = false;
+            continue;
+        } else if(readingPacket)
+            packet.append(buffer.at(i));
+    }
+}
+
+void Antenna::handlePacket(){
+    switch (packet.at(0)){
     case 'R':
         if(!m_isArduinoConnected){
             // sending ready signal to arduino
@@ -103,7 +120,7 @@ void Antenna::handleBuffer(){
         }
         break;
     case 'E':
-        emit errorChange(m_error = buffer.at(1) - '0');
+        emit errorChange(m_error = packet.at(1) - '0');
         break;
     case 'D':
         float bar = packFloat(1);
@@ -114,6 +131,14 @@ void Antenna::handleBuffer(){
         float a_accx = packFloat(21);
         float a_accy = packFloat(25);
         float a_accz = packFloat(29);
+        qDebug() << "bar:" << bar;
+        qDebug() << "temp:" << temperature;
+        qDebug() << "acc linx:" <<  l_accx;
+        qDebug() << "acc liny:" << l_accy;
+        qDebug() << "acc linz:" << l_accz;
+        qDebug() << "acc angx:" << a_accx;
+        qDebug() << "acc angy:" << a_accy;
+        qDebug() << "acc angz:" << a_accz;
 
         RocketData data{};
         data.barometer = (bar);
@@ -129,7 +154,7 @@ float Antenna::packFloat(int index){
     char bytes[4];
     float f;
     for (int i = 0; i < 4; i++)
-        bytes[i] = buffer.at(index + i);
+        bytes[i] = packet.at(index + i);
     memcpy(&f, &bytes, sizeof(f));
     return f;
 

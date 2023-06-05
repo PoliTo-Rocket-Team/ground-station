@@ -90,7 +90,9 @@ private:
     void openSerialPort();
     int sendToArduino(quint8 data);
     QByteArray buffer;
-    void handleBuffer();
+    QByteArray packet;
+    void handlePacket();
+    void readBuffer();
 
     void __start();
     quint8 __f;
