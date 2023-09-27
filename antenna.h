@@ -10,13 +10,14 @@
 struct RocketData {
     Q_GADGET
     Q_PROPERTY(float barometer MEMBER barometer);
-    Q_PROPERTY(float latitude MEMBER lat);
-    Q_PROPERTY(float longitude MEMBER lng);
+    // Q_PROPERTY(float latitude MEMBER lat);
+    // Q_PROPERTY(float longitude MEMBER lng);
     Q_PROPERTY(QVector3D acc_lin MEMBER acc_lin);
     Q_PROPERTY(QVector3D acc_ang MEMBER acc_ang);
 public:
     float barometer;
-    float lat, lng;
+    float temperature;
+    // float lat, lng;
     QVector3D acc_lin, acc_ang;
     RocketData(std::byte* raw);
     RocketData() = default;
@@ -65,7 +66,8 @@ private:
      * It is false at startup and during frequency change. Becomes true upon receiving [C]
      */
     bool m_isArduinoConnected = false;
-
+    // +1 for the packet code
+    int PACKET_SIZE = sizeof(RocketData) + 1;
     State m_state = State::DISCONNECTED;
     /*
      * Error code
@@ -87,12 +89,17 @@ private:
     QSerialPort *arduino;
     void openSerialPort();
     int sendToArduino(quint8 data);
+    QByteArray buffer;
+    QByteArray packet;
+    void readPacket();
+    void handleBuffer(char* buf);
+    bool readingPacket = false;
 
     void __start();
     quint8 __f;
     QTimer *__timer;
-    float __lastBaro = 0;
-    void __randomData();
+    QTimer *scanTimer;
+    float packFloat(int index);
 
 private slots:
     void readData();
@@ -101,7 +108,7 @@ signals:
     void connectedChanged(bool);
     void stateChanged(Antenna::State state);
     void frequencyChanged(quint8 f);
-    void errorChange();
+    void errorChange(quint8 e);
     void newData(int ms, RocketData data);
     void rollback();
 };

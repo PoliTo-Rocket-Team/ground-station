@@ -6,4 +6,8 @@
         <file alias="Regular">resources/JakartaSans/Regular.ttf</file>
         <file alias="SemiBold">resources/JakartaSans/SemiBold.ttf</file>
     </qresource>
+    <qresource prefix="/imgs">
+        <file alias="logo">imgs/logo.png</file>
+        <file alias="icon">imgs/icon.png</file>
+    </qresource>
 </RCC>

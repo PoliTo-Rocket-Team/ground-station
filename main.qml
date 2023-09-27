@@ -4,9 +4,9 @@ import QtQuick.Layouts 1.15
 import Antenna 1.0
 
 Window {
-    minimumWidth: 700
+    minimumWidth: 900
     width: 1200
-    minimumHeight: 350
+    minimumHeight: 600
     height: 900
     visible: true
     title: "PRT - Ground Station"
@@ -14,8 +14,8 @@ Window {
 
     Connections {
         target: Antenna
-        function onConnectedChanged(){
-            frequency_popup.open();
+        function onConnectedChanged(connected){
+            if(connected) frequency_popup.open();
         }
         function onNewData(time, data) {;
             acc_lin.add(time, data.acc_lin);
@@ -58,7 +58,7 @@ Window {
                 }
             }
             Text {
-                text: "Please insert the desired frequency: range from 850 to 930 MHz";
+                text: "Please insert the desired frequency: range goes from 850 to 930 MHz";
                 width: parent.width;
                 wrapMode: Text.WordWrap;
                 bottomPadding: 15;
@@ -94,7 +94,6 @@ Window {
                     onClicked: {
                         const v = frequency_input.value - 850;
                         Antenna.setFrequency(v);
-                        console.log("set freq");
                         frequency_popup.close();
                     }
                 }
@@ -121,6 +120,7 @@ Window {
         rows: 1; columns: 2;
 
         Rectangle {
+            id: sidebar;
             color: "#212121"
             height: parent.height;
             width: 300;
@@ -132,7 +132,7 @@ Window {
                     right: parent.right;
                     margins: 20;
                 }
-                spacing: 30
+                spacing: 40
 
                 Text {
                     text: "Ground Station"
@@ -142,19 +142,86 @@ Window {
                         weight: Font.Bold;
                     }
                 }
-                Text {
-                    text: nofreq ? "No frequency set" : `Frequency = ${Antenna.frequency + 850}MHz`;
-                    color: "#efefef"
+                Column {
+                    spacing: 5;
+                    Text {
+                        text: "Frequency"
+                        color: "#efefef"
+                        font {
+                            pointSize: 14;
+                            weight: Font.Bold;
+                        }
+                    }
+                    Text {
+                        text: nofreq ? "Not set" : `${Antenna.frequency + 850}MHz`;
+                        color: "#efefef"
+                    }
+                    Item { width: 1; height: 3; }
+                    UIButton {
+                        text: "Change";
+                        onClicked: frequency_popup.open();
+                    }
+                }
+//                Column {
+//                    spacing: 5;
+//                    Text {
+//                        text: "Parachute"
+//                        color: "#efefef"
+//                        font {
+//                            pointSize: 14;
+//                            weight: Font.Bold;
+//                        }
+//                    }
+//                    Text {
+//                        text: "Target height = 4000m";
+//                        color: "#efefef";
+//                    }
+//                    Text {
+//                        text: "No parachute deployed";
+//                        color: "#efefef";
+//                    }
+//                }
+                Column {
+                    spacing: 5;
+                    Text {
+                        text: "Graphs"
+                        color: "#efefef"
+                        font {
+                            pointSize: 14;
+                            weight: Font.Bold;
+                        }
+                    }
+                    UISwitch {
+                        id: adaptive;
+                        text: "Adaptive";
+                    }
+
+                    Item { width: 1; height: 3; }
+                    UIButton {
+                        text: "Reset axis";
+                        onClicked: {
+                            acc_lin.clear();
+                            acc_ang.clear();
+                            barometer.clear();
+                        }
+                    }
                 }
             }
-            UIButton {
+            Image {
+                id: logo
+                source: "qrc:///imgs/logo"
+                width: 100;
+                height: width * 289/600;
+                smooth: true;
+                sourceSize {
+                    width: 600;
+                    height: 289
+                }
                 anchors {
-                    horizontalCenter: parent.horizontalCenter;
                     bottom: parent.bottom;
                     bottomMargin: 20;
+                    horizontalCenter: parent.horizontalCenter;
                 }
-                text: "Change frequency";
-                onClicked: frequency_popup.open();
             }
         }
         Rectangle {
@@ -172,8 +239,25 @@ Window {
                              : nofreq ? "No frequency was selected" : "No signal was received from the rocket";
             }
 
+            Message {
+                width: 350
+                anchors.centerIn: parent
+                visible: Antenna.state === Antenna.CONNECTED && Antenna.error !== 0;
+                title: `${getFaultingComponent(Antenna.error)} not working`;
+                description: `Error #${Antenna.error}`
+
+                function getFaultingComponent(code) {
+                    switch(code) {
+                    case 1: return "IMU";
+                    case 2: return "Barometer";
+                    case 3: return "GPS";
+                    default: return "Something"
+                    }
+                }
+            }
+
             GridLayout {
-                visible: Antenna.state === Antenna.CONNECTED;
+                visible: Antenna.state === Antenna.CONNECTED && Antenna.error === 0;
                 rows: 2;
                 columns: 2;
                 anchors {
@@ -183,23 +267,28 @@ Window {
                 VectorPlot {
                     id: acc_lin;
                     title: "Linear acceleration"
+                    minTimeDelta: 60;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
                 }
                 VectorPlot {
                     id: acc_ang;
                     title: "Angular acceleration"
+                    minTimeDelta: 60;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
                 }
                 VariablePlot {
                     id: barometer;
                     title: "Barometer";
-                    initialMin: 0;
-                    initialMax: 200;
+                    min: 300;
+                    max: 1100;
+                    minTimeDelta: 60;
+                    spacing: 10;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
                     lineColor: "#f9a73e"
+                    adaptive: adaptive.checked;
                 }
             }
         }
