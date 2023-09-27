@@ -75,50 +75,39 @@ void Antenna::openSerialPort()
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
-    /*
-    char buf[1024];
-    while(arduino->canReadLine()){
-        arduino->readLine(buf, sizeof(buf));
-        handleBuffer(buf);
-    }
-*/
-    packet.append(data);
-    if(packet.size() >= PACKET_SIZE){
-        readPacket();
-        packet.clear();
-    }
+    buffer.append(data);
+    readBuffer();
+
     qDebug() << "UART:" << data;
 }
 
-void Antenna::readPacket() {
-    for (int i = 0; i < packet.size(); i++){
-        // 0xAA == start/end sequence identifier
-        if (packet.at(i) == (char)'\xAA'){
+void Antenna::readBuffer() {
+    bool readingPacket = false;
+    for (int i = 0; i < buffer.size(); i++){
+        // 0xAA == start sequence identifier
+        if (buffer.at(i) == (char)'\xAA'){
             readingPacket = true;
             continue;
         }
-        else if(packet.at(i) == (char)'\xBB'){
-            if(buffer.size() == PACKET_SIZE){
-                handleBuffer();
-                buffer.clear();
+        // 0xBB == end sequence identifier
+        else if(buffer.at(i) == (char)'\xBB'){
+            if(packet.size() == PACKET_SIZE){
+                handlePacket();
+                packet.clear();
+                // shifts the buffer left
+                buffer = buffer.last(buffer.size() - i);
             } else
                 // discard incomplete packet
-                buffer.clear();
+                packet.clear();
             readingPacket = false;
             continue;
         } else if(readingPacket)
-            buffer.append(packet.at(i));
+            packet.append(buffer.at(i));
     }
-
-    if(buffer.size() == PACKET_SIZE){
-        handleBuffer();
-        buffer.clear();
-    }
-
 }
 
-void Antenna::handleBuffer(){
-    switch (buffer.at(0)){
+void Antenna::handlePacket(){
+    switch (packet.at(0)){
     case 'R':
         if(!m_isArduinoConnected){
             // sending ready signal to arduino
@@ -133,7 +122,7 @@ void Antenna::handleBuffer(){
         }
         break;
     case 'E':
-        emit errorChange(m_error = buffer.at(1) - '0');
+        emit errorChange(m_error = packet.at(1) - '0');
         break;
     case 'D':
         float bar = packFloat(1);
@@ -167,7 +156,7 @@ float Antenna::packFloat(int index){
     char bytes[4];
     float f;
     for (int i = 0; i < 4; i++)
-        bytes[i] = buffer.at(index + i);
+        bytes[i] = packet.at(index + i);
     memcpy(&f, &bytes, sizeof(f));
     return f;
 

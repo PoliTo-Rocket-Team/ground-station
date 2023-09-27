@@ -91,9 +91,8 @@ private:
     int sendToArduino(quint8 data);
     QByteArray buffer;
     QByteArray packet;
-    void readPacket();
-    void handleBuffer(char* buf);
-    bool readingPacket = false;
+    void handlePacket();
+    void readBuffer();
 
     void __start();
     quint8 __f;
