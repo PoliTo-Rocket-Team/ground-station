@@ -54,7 +54,10 @@ void Antenna::openSerialPort()
 {
     const auto serialPortInfos = QSerialPortInfo::availablePorts();
     for (const QSerialPortInfo &portInfo : serialPortInfos) {
-        if(portInfo.manufacturer().toLower().contains("arduino") || portInfo.description().toLower().contains("arduino")){
+        if(
+            portInfo.manufacturer().toLower().contains("arduino") ||
+            portInfo.description().toLower().contains("arduino")
+        ){
             arduino->setPortName(portInfo.systemLocation());
             arduino->setBaudRate(QSerialPort::Baud9600);
             arduino->setDataBits(QSerialPort::Data8);
@@ -63,10 +66,11 @@ void Antenna::openSerialPort()
             arduino->setFlowControl(QSerialPort::NoFlowControl);
 
             if(!arduino->open(QIODevice::ReadWrite)){
-                qDebug() << (tr("error %1").arg(arduino->error()));
+                qDebug() << "Error in opening port " << portInfo.portName() << ", code " << arduino->error();
                 return;
             }
             scanTimer->stop();
+            emit connectedChanged(m_isArduinoConnected = true);
             break;
         }
     }
