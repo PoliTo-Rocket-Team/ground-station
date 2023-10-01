@@ -94,9 +94,6 @@ private:
     void handlePacket();
     void readBuffer();
 
-    void __start();
-    quint8 __f;
-    QTimer *__timer;
     QTimer *scanTimer;
     float packFloat(int index);
 

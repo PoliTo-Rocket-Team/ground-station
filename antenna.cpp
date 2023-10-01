@@ -31,7 +31,6 @@ Antenna::Antenna(QObject *parent)
     buffer(),
     packet()
 {
-    __timer = new QTimer(this);
     scanTimer = new QTimer(this);
     connect(scanTimer,&QTimer::timeout,this,&Antenna::openSerialPort);
     arduino = new QSerialPort(this);
@@ -122,7 +121,6 @@ void Antenna::handlePacket(){
         if(m_state != State::CONNECTED){
             emit stateChanged(m_state = State::CONNECTED);
             m_startTime = QTime::currentTime();
-            __timer->start(1000);
         }
         break;
     case 'E':
