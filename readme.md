@@ -4,7 +4,7 @@ QtQuick Ddesktop app of the ground station + Arduino code of the LoRa
 
 ## Contribute
 
-This application uses Qt 6.4.3 and the additional library QtCharts (which must be intsllaed from the Qt Maintenance tool). To set up the environement do the following:
+This application uses Qt 6.4.3 and the additional library QtCharts (which must be installed from the Qt Maintenance tool). To set up the environement do the following:
 
  1. Clone the repository
  2. Qt Creator > File > Open File or Project
@@ -45,3 +45,14 @@ When the rocket board startups or has changed the frequency, it trasmits repeate
 ### setFrequency
 
 ![setFrequency flowchart](./imgs/setFrequency.svg)
+
+## Release
+
+### Windows
+
+Following the [official guide](https://doc.qt.io/qt-6/windows-deployment.html):
+
+1. Switch to "Release" build type and build the project
+2. Copy the generated `/path/to/release/build/folder/appground-station.exe` file into a new folder 
+3. Open the cmd in the `bin` directory inside the Qt directory in your local machine (usually `C:/Qt/<version>/<compiler>/`)
+4. Run `windeployqt /path/to/the/executable/you/copied.exe --qmldir /path/to/release/build/folder/ground-station`  
