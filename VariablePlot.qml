@@ -7,12 +7,14 @@ ChartView {
     property real max: +1;
     property bool adaptive: false;
     property real spacing: 0.5;
+    property int number: 1;
 
     property color lineColor: "gray";
     property real minTimeDelta: 10;
 
-    function add(time, value) {
-        series.append(time, value);
+    function add(time: float, value: float, index: int = 0) {
+        if(index < 0 || index >= number) return;
+        series.itemAt(index).append(time, value);
         if(internal.first) {
             internal.first = false;
             timeAxis.min = time;
@@ -25,7 +27,7 @@ ChartView {
         else if(value > internal.max) internal.max = value + spacing;
     }
     function clear() {
-        series.clear();
+        for(var i=0; i<number; i++) series.itemAt(i).clear();
         internal.first = true;
     }
 
@@ -48,10 +50,14 @@ ChartView {
         min: adaptive ? internal.min : cv.min;
         max: adaptive ? internal.max : cv.max;
     }
-    LineSeries {
+    Repeater {
         id: series;
-        axisX: timeAxis;
-        axisY: axisY;
-        color: lineColor;
+        model: number;
+        LineSeries {
+            axisX: timeAxis;
+            axisY: axisY;
+            color: lineColor;
+        }
     }
+
 }
