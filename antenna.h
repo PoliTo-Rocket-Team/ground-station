@@ -9,14 +9,17 @@
 
 struct RocketData {
     Q_GADGET
-    Q_PROPERTY(float barometer MEMBER barometer);
+    Q_PROPERTY(float pressure1 MEMBER pressure1);
+    Q_PROPERTY(float pressure2 MEMBER pressure2);
+    Q_PROPERTY(float temperature1 MEMBER temperature1);
+    Q_PROPERTY(float temperature2 MEMBER temperature2);
     // Q_PROPERTY(float latitude MEMBER lat);
     // Q_PROPERTY(float longitude MEMBER lng);
     Q_PROPERTY(QVector3D acc_lin MEMBER acc_lin);
     Q_PROPERTY(QVector3D acc_ang MEMBER acc_ang);
 public:
-    float barometer;
-    float temperature;
+    float pressure1, pressure2;
+    float temperature1, temperature2;
     // float lat, lng;
     QVector3D acc_lin, acc_ang;
     RocketData(std::byte* raw);
@@ -90,12 +93,12 @@ private:
     void openSerialPort();
     int sendToArduino(quint8 data);
     QByteArray buffer;
-    QByteArray packet;
-    void handlePacket();
+    void handlePacket(QByteArray packet);
     void readBuffer();
 
     QTimer *scanTimer;
-    float packFloat(int index);
+
+    qsizetype searchEndFrom = 0;
 
 private slots:
     void readData();

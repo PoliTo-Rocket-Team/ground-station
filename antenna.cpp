@@ -3,9 +3,10 @@
 #include <QIODevice>
 #include <QSerialPort>
 #include <QSerialPortInfo>
-#include<QDebug>
+#include <QDebug>
 #include <unistd.h>
 #include <QRandomGenerator>
+#include <QDateTime>
 
 QVector3D vectorFromBytes(std::byte* raw) {
     float x, y, z;
@@ -28,8 +29,7 @@ RocketData::RocketData(std::byte* raw)
 
 Antenna::Antenna(QObject *parent)
     : QObject{parent},
-    buffer(),
-    packet()
+    buffer()
 {
     scanTimer = new QTimer(this);
     connect(scanTimer,&QTimer::timeout,this,&Antenna::openSerialPort);
@@ -41,8 +41,8 @@ Antenna::Antenna(QObject *parent)
 void Antenna::setFrequency(quint8 f) {
     emit frequencyChanged(m_frequency = f);
     emit stateChanged(m_state = State::POLLING);
-    sendToArduino('F');
-    sendToArduino(f);
+    char msg[2] = { 'F', (char)f };
+    arduino->write(msg,2);
     QTimer::singleShot(5000, this, [this](){
         if(m_state == State::POLLING)
             emit stateChanged(m_state = State::DISCONNECTED);
@@ -51,8 +51,10 @@ void Antenna::setFrequency(quint8 f) {
 
 void Antenna::openSerialPort()
 {
+    qDebug() << "Scanning for Arduino";
     const auto serialPortInfos = QSerialPortInfo::availablePorts();
     for (const QSerialPortInfo &portInfo : serialPortInfos) {
+        qDebug() << " -" << portInfo.manufacturer() << ": " << portInfo.description();
         if(
             portInfo.manufacturer().toLower().contains("arduino") ||
             portInfo.description().toLower().contains("arduino")
@@ -69,53 +71,71 @@ void Antenna::openSerialPort()
                 return;
             }
             scanTimer->stop();
-            emit connectedChanged(m_isArduinoConnected = true);
             break;
         }
     }
 }
 
+bool notAllJunk(QByteArray a) {
+    for (int i = 0; i < a.size(); i++) if(a.at(i) != (char)'\x00') return true;
+    return false;
+}
+
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
-    buffer.append(data);
-    readBuffer();
+    // if(notAllJunk(data)) qDebug() << "UART:" << data;
 
-    qDebug() << "UART:" << data;
+    if(buffer.size()) buffer.append(data);
+    else {
+        qsizetype p_start = data.indexOf((char)'\xAA');
+        if(p_start == -1) return;
+        buffer = data.last(data.size() - 1 - p_start);
+    }
+    readBuffer();
 }
 
 void Antenna::readBuffer() {
-    bool readingPacket = false;
-    for (int i = 0; i < buffer.size(); i++){
-        // 0xAA == start sequence identifier
-        if (buffer.at(i) == (char)'\xAA'){
-            readingPacket = true;
-            continue;
+    qsizetype p_end = buffer.indexOf((char)'\xBB', searchEndFrom);
+    if(p_end == -1) searchEndFrom = buffer.size();
+    else {
+        searchEndFrom = 0;
+        QByteArray packet = buffer.first(p_end);
+        handlePacket(packet);
+
+        qsizetype p_start = buffer.indexOf((char)'\xAA', p_end);
+        if(p_start == -1) buffer.clear();
+        else {
+            buffer.remove(0, p_start+1); // remove also \xBB
+            readBuffer();
         }
-        // 0xBB == end sequence identifier
-        else if(buffer.at(i) == (char)'\xBB'){
-            if(packet.size() == PACKET_SIZE){
-                handlePacket();
-                packet.clear();
-                // shifts the buffer left
-                buffer = buffer.last(buffer.size() - i);
-            } else
-                // discard incomplete packet
-                packet.clear();
-            readingPacket = false;
-            continue;
-        } else if(readingPacket)
-            packet.append(buffer.at(i));
     }
 }
 
-void Antenna::handlePacket(){
+float packFloat(QByteArray & a, qsizetype from) {
+    char f[4];
+    for (int i = 0; i < 4; i++) f[i] = a.at(from + i);
+    return *((float*) &f);
+}
+
+void Antenna::handlePacket(QByteArray packet){
+    static auto last = QDateTime::currentMSecsSinceEpoch();
+    static qint64 now;
+    now = QDateTime::currentMSecsSinceEpoch();
+    qDebug() << now - last << " Serial message: " << packet;
+    last = now;
     switch (packet.at(0)){
     case 'R':
-        if(!m_isArduinoConnected){
-            // sending ready signal to arduino
-            sendToArduino('B');
-            emit connectedChanged(m_isArduinoConnected = true);}
+        // sending ready signal to arduino
+        qDebug() << "Send [B]";
+//        sendToArduino('B');
+        arduino->write("B", 1);
+        // arduino->waitForBytesWritten();
+        if(!m_isArduinoConnected) {
+            emit connectedChanged(m_isArduinoConnected = true);
+            emit stateChanged(m_state = State::CONNECTED);
+            emit frequencyChanged(m_frequency = 23);
+        }
         break;
     case 'C':
         if(m_state != State::CONNECTED){
@@ -127,14 +147,18 @@ void Antenna::handlePacket(){
         emit errorChange(m_error = packet.at(1) - '0');
         break;
     case 'D':
-        float bar = packFloat(1);
-        float temperature = packFloat(5);
-        float l_accx = packFloat(9);
-        float l_accy = packFloat(13);
-        float l_accz = packFloat(17);
-        float a_accx = packFloat(21);
-        float a_accy = packFloat(25);
-        float a_accz = packFloat(29);
+        if(packet.size() != PACKET_SIZE) {
+            qDebug() << "Data packet has wrong diemsions";
+            break;
+        }
+        float bar = packFloat(packet, 1);
+        float temperature = packFloat(packet, 5);
+        float l_accx = packFloat(packet, 9);
+        float l_accy = packFloat(packet, 13);
+        float l_accz = packFloat(packet, 17);
+        float a_accx = packFloat(packet, 21);
+        float a_accy = packFloat(packet, 25);
+        float a_accz = packFloat(packet, 29);
         qDebug() << "bar:" << bar;
         qDebug() << "temp:" << temperature;
         qDebug() << "acc linx:" <<  l_accx;
@@ -152,16 +176,6 @@ void Antenna::handlePacket(){
         emit newData(m_startTime.secsTo(QTime::currentTime()), data);
         break;
     }
-}
-
-float Antenna::packFloat(int index){
-    char bytes[4];
-    float f;
-    for (int i = 0; i < 4; i++)
-        bytes[i] = packet.at(index + i);
-    memcpy(&f, &bytes, sizeof(f));
-    return f;
-
 }
 
 int Antenna::sendToArduino(quint8 data){

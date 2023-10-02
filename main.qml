@@ -15,17 +15,21 @@ Window {
     Connections {
         target: Antenna
         function onConnectedChanged(connected){
-            if(connected) frequency_popup.open();
+            // if(connected) frequency_popup.open();
         }
         function onNewData(time, data) {;
             acc_lin.add(time, data.acc_lin);
             acc_ang.add(time, data.acc_ang);
-            barometer.add(time, data.barometer);
+            pressure.add(time, data.pressure1, 0);
+            pressure.add(time, data.pressure2, 0);
+            temperature.add(time, data.temperature1, 0);
+            temperature.add(time, data.temperature2, 0);
         }
         function onFrequencyChanged() {
             acc_lin.clear();
             acc_ang.clear();
-            barometer.clear();
+            pressure.clear();
+            temperature.clear();
         }
     }
 
@@ -279,7 +283,20 @@ Window {
                     Layout.fillHeight: true;
                 }
                 VariablePlot {
-                    id: barometer;
+                    id: pressure;
+                    title: "Pressure";
+                    min: 300;
+                    max: 1100;
+                    minTimeDelta: 60;
+                    spacing: 10;
+                    Layout.fillWidth: true;
+                    Layout.fillHeight: true;
+                    lineColor: "#f9a73e"
+                    adaptive: adaptive.checked;
+                    number: 2;
+                }
+                VariablePlot {
+                    id: temperature;
                     title: "Barometer";
                     min: 300;
                     max: 1100;
@@ -289,6 +306,7 @@ Window {
                     Layout.fillHeight: true;
                     lineColor: "#f9a73e"
                     adaptive: adaptive.checked;
+                    number: 2;
                 }
             }
         }
