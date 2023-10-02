@@ -1,6 +1,6 @@
 #include "LoRa_E220.h"
 
-LoRa_E220 e220ttl(&Serial1, 2, 4, 6);  //  RX AUX M0 M1
+LoRa_E220 e220ttl(&Serial1, 2, 5, 7);  //  RX AUX M0 M1
 
 bool backend_connected = false;
 byte frequency = 0xFF;
@@ -19,11 +19,28 @@ struct Packet {
   char endSeq;
 };
 
+struct RocketData {
+  byte bar1[4], bar2[4];
+  byte temp1[4], temp2[4];
+  byte al_x[4];
+  byte al_y[4];
+  byte al_z[4];
+  byte aa_x[4];
+  byte aa_y[4];
+  byte aa_z[4];
+};
+
 void setup() {
   randomSeed(analogRead(0));
   Serial.begin(9600);
   e220ttl.begin();
   delay(500);
+
+  ResponseStructContainer c = e220ttl.getConfiguration();
+  Configuration configuration = *((Configuration *)c.data);
+  configuration.CHAN = 23;
+  e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
+  c.close();
 }
 
 void loop() {
@@ -45,7 +62,7 @@ void loop() {
           ResponseStructContainer c = e220ttl.getConfiguration();
           Configuration configuration = *((Configuration *)c.data);
 
-          configuration.CHAN = 23;
+          configuration.CHAN = frequency;
           rs = e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
           c.close();
           // TODO: REMOVE
@@ -64,6 +81,7 @@ void loop() {
     
     struct Packet packet = { 0xAA, 'R', { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, 0xBB };
     Serial.write((byte *)&packet, sizeof(Packet));
+    delay(250);
 
     //Serial.println("R");
     return;
@@ -71,17 +89,9 @@ void loop() {
 
   //delay(350);
 
-  if (e220ttl.available() > 1) {
-    struct AntennaData {  // Partial structure without type and start sequence
-      byte bar[4];
-      byte temp[4];
-      byte al_x[4];
-      byte al_y[4];
-      byte al_z[4];
-      byte aa_x[4];
-      byte aa_y[4];
-      byte aa_z[4];
-    };
+  // Serial.println("Antenna code brach");
+  if (e220ttl.available() > 0) {
+    Serial.println("Received");
     char code;  // first part of structure
     ResponseContainer rs = e220ttl.receiveInitialMessage(sizeof(code));
     // Put string in a char array (not needed)
@@ -100,10 +110,10 @@ void loop() {
         break;
       default:
         // Read the rest of structure
-        ResponseStructContainer rsc = e220ttl.receiveMessageRSSI(sizeof(AntennaData));
-        struct AntennaData data = *(AntennaData *)rsc.data;
-        float bar = *(float *)data.bar;
-        float temp = *(float *)data.temp;
+        ResponseStructContainer rsc = e220ttl.receiveMessageRSSI(sizeof(RocketData));
+        struct RocketData data = *(RocketData *)rsc.data;
+        float bar = *(float *)data.bar1;
+        float temp = *(float *)data.temp1;
         float al_x = *(float *)data.al_x;
         float al_y = *(float *)data.al_y;
         float al_z = *(float *)data.al_z;
@@ -112,8 +122,8 @@ void loop() {
         float aa_z = *(float *)data.aa_z;
 
         struct Packet packet = { 0xAA, code, bar, temp, al_x, al_y, al_z, aa_x, aa_y, aa_z, 0xBB };
-        memcpy(&packet.bar, (float *)data.bar, sizeof(float));
-        memcpy(&packet.temp, (float *)data.temp, sizeof(float));
+        memcpy(&packet.bar, (float *)data.bar1, sizeof(float));
+        memcpy(&packet.temp, (float *)data.temp1, sizeof(float));
         memcpy(&packet.al_x, (float *)data.al_x, sizeof(float));
         memcpy(&packet.al_y, (float *)data.al_y, sizeof(float));
         memcpy(&packet.al_z, (float *)data.al_z, sizeof(float));
@@ -165,72 +175,4 @@ void loop() {
 
 float randomFloat(float minf, float maxf) {
   return minf + random(1UL << 31) * (maxf - minf) / (1UL << 31);  // use 1ULL<<63 for max double values)
-}
-
-
-void printParameters(struct Configuration configuration) {
-  DEBUG_PRINTLN("----------------------------------------");
-
-  DEBUG_PRINT(F("HEAD : "));
-  DEBUG_PRINT(configuration.COMMAND, HEX);
-  DEBUG_PRINT(" ");
-  DEBUG_PRINT(configuration.STARTING_ADDRESS, HEX);
-  DEBUG_PRINT(" ");
-  DEBUG_PRINTLN(configuration.LENGHT, HEX);
-  DEBUG_PRINTLN(F(" "));
-  DEBUG_PRINT(F("AddH : "));
-  DEBUG_PRINTLN(configuration.ADDH, HEX);
-  DEBUG_PRINT(F("AddL : "));
-  DEBUG_PRINTLN(configuration.ADDL, HEX);
-  DEBUG_PRINTLN(F(" "));
-  DEBUG_PRINT(F("Chan : "));
-  DEBUG_PRINT(configuration.CHAN, DEC);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.getChannelDescription());
-  DEBUG_PRINTLN(F(" "));
-  DEBUG_PRINT(F("SpeedParityBit     : "));
-  DEBUG_PRINT(configuration.SPED.uartParity, BIN);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.SPED.getUARTParityDescription());
-  DEBUG_PRINT(F("SpeedUARTDatte     : "));
-  DEBUG_PRINT(configuration.SPED.uartBaudRate, BIN);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.SPED.getUARTBaudRateDescription());
-  DEBUG_PRINT(F("SpeedAirDataRate   : "));
-  DEBUG_PRINT(configuration.SPED.airDataRate, BIN);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.SPED.getAirDataRateDescription());
-  DEBUG_PRINTLN(F(" "));
-  DEBUG_PRINT(F("OptionSubPacketSett: "));
-  DEBUG_PRINT(configuration.OPTION.subPacketSetting, BIN);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.OPTION.getSubPacketSetting());
-  DEBUG_PRINT(F("OptionTranPower    : "));
-  DEBUG_PRINT(configuration.OPTION.transmissionPower, BIN);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.OPTION.getTransmissionPowerDescription());
-  DEBUG_PRINT(F("OptionRSSIAmbientNo: "));
-  DEBUG_PRINT(configuration.OPTION.RSSIAmbientNoise, BIN);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.OPTION.getRSSIAmbientNoiseEnable());
-  DEBUG_PRINTLN(F(" "));
-  DEBUG_PRINT(F("TransModeWORPeriod : "));
-  DEBUG_PRINT(configuration.TRANSMISSION_MODE.WORPeriod, BIN);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.TRANSMISSION_MODE.getWORPeriodByParamsDescription());
-  DEBUG_PRINT(F("TransModeEnableLBT : "));
-  DEBUG_PRINT(configuration.TRANSMISSION_MODE.enableLBT, BIN);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.TRANSMISSION_MODE.getLBTEnableByteDescription());
-  DEBUG_PRINT(F("TransModeEnableRSSI: "));
-  DEBUG_PRINT(configuration.TRANSMISSION_MODE.enableRSSI, BIN);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.TRANSMISSION_MODE.getRSSIEnableByteDescription());
-  DEBUG_PRINT(F("TransModeFixedTrans: "));
-  DEBUG_PRINT(configuration.TRANSMISSION_MODE.fixedTransmission, BIN);
-  DEBUG_PRINT(" -> ");
-  DEBUG_PRINTLN(configuration.TRANSMISSION_MODE.getFixedTransmissionDescription());
-
-
-  DEBUG_PRINTLN("----------------------------------------");
 }
