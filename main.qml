@@ -15,7 +15,7 @@ Window {
     Connections {
         target: Antenna
         function onConnectedChanged(connected){
-            // if(connected) frequency_popup.open();
+             if(connected) frequency_popup.open();
         }
         function onNewData(time, data) {;
             acc_lin.add(time, data.acc_lin);
