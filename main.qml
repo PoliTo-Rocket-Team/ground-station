@@ -21,9 +21,9 @@ Window {
             acc_lin.add(time, data.acc_lin);
             acc_ang.add(time, data.acc_ang);
             pressure.add(time, data.pressure1, 0);
-            pressure.add(time, data.pressure2, 0);
+            pressure.add(time, data.pressure2, 1);
             temperature.add(time, data.temperature1, 0);
-            temperature.add(time, data.temperature2, 0);
+            temperature.add(time, data.temperature2, 1);
         }
         function onFrequencyChanged() {
             acc_lin.clear();
