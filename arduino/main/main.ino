@@ -3,6 +3,7 @@
 #define FCHANGE_TIMEOUT 2000
 
 LoRa_E220 e220ttl(&Serial1, 2, 5, 7);  //  RX AUX M0 M1
+// LoRa_E220 e220ttl(3, 2, 5, 8, 10);
 
 bool backend_connected = false;
 byte frequency = 0xFF;
@@ -43,20 +44,26 @@ void loop() {
           
           byte new_frequency;
           Serial.readBytes(&new_frequency, 1);
-          if(frequency == 0xFF) {
-            // if first time, simply set freq
-            ResponseStructContainer c = e220ttl.getConfiguration();
-            Configuration configuration = *((Configuration *)c.data);
-            configuration.CHAN = frequency = new_frequency;
-            e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
-            c.close();
-            sendCharToApp('C');
-          }
-          else {
-            if(frequency != new_frequency) {
-              changeFrequency(new_frequency);
-            }
-          }
+          // if(frequency == 0xFF) {
+          //   // if first time, simply set freq
+          //   ResponseStructContainer c = e220ttl.getConfiguration();
+          //   Configuration configuration = *((Configuration *)c.data);
+          //   configuration.ADDL = 0x03;
+	        //   configuration.ADDH = 0x00;
+          //   configuration.CHAN = frequency = new_frequency;
+          //   e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
+          //   c.close();
+          //   Serial.write(0xAA);
+          //   Serial.write("CN",2);
+          //   Serial.write(0xBB);
+          //   // sendCharToApp('C');
+          // }
+          // else {
+          //   if(frequency != new_frequency) {
+          //     changeFrequency(new_frequency);
+          //   }
+          // }
+          changeFrequency(new_frequency);
           break;
         }
     }
@@ -77,6 +84,7 @@ void loop() {
     switch (packet.code) {
       case 'C':
         {
+          delay(100);
           e220ttl.sendMessage("C");
           sendCharToApp('C');
           break;
@@ -110,12 +118,12 @@ void changeFrequency(byte new_freq) {
   Configuration config;
   ResponseStructContainer incoming;
   bool ok;
-  unsigned int old_freq = frequency;
 
-  // c = e220ttl.getConfiguration();
-  // config = *(Configuration*)c.data;
-  // c.close();
-  // old_freq = config.CHAN;
+  c = e220ttl.getConfiguration();
+  config = *(Configuration*)c.data;
+  c.close();
+  unsigned old_freq = config.CHAN;
+  // unsigned int old_freq = frequency;
 
   char msg[] = "F0";
   msg[1] = new_freq;
@@ -148,6 +156,8 @@ void changeFrequency(byte new_freq) {
 
     if (ok) break;
     // switching back to old frequency
+    config.ADDL = 0x03;
+	  config.ADDH = 0x00;
     config.CHAN = old_freq;
     e220ttl.setConfiguration(config, WRITE_CFG_PWR_DWN_SAVE);
     counter++;
