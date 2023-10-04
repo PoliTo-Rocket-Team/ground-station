@@ -85,12 +85,11 @@ bool notAllJunk(QByteArray a) {
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
-    qDebug() << "UART: received" << data;
+    // qDebug() << "UART: received" << data;
     // if(notAllJunk(data)) qDebug() << "UART:" << data;
 
     if(open_packet) {
         buffer.append(data);
-        qDebug() << " > appended";
     }
     else {
         qsizetype p_start = data.indexOf((char)'\xAA');
@@ -102,7 +101,6 @@ void Antenna::readData()
 }
 
 void Antenna::readBuffer() {
-    qDebug() << "Cerco C in" << buffer << "from index" << searchEndFrom;
     qsizetype p_end = buffer.indexOf((char)'\xBB', searchEndFrom);
     if(p_end == -1) searchEndFrom = buffer.size();
     else {
@@ -151,7 +149,7 @@ void Antenna::handlePacket(QByteArray packet){
         if(!m_isArduinoConnected) {
             emit connectedChanged(m_isArduinoConnected = true);
             emit stateChanged(m_state = State::CONNECTED);
-
+            emit frequencyChanged(m_frequency = 23);
         }
         break;
     }
@@ -176,22 +174,22 @@ void Antenna::handlePacket(QByteArray packet){
         float bar2 = packFloat(packet, 5);
         float temperature1 = packFloat(packet, 9);
         float temperature2 = packFloat(packet, 13);
-        float l_accx = packFloat(packet, 17);
-        float l_accy = packFloat(packet, 21);
-        float l_accz = packFloat(packet, 25);
+        float l_accx = packFloat(packet, 17)*9.81;
+        float l_accy = packFloat(packet, 21)*9.81;
+        float l_accz = packFloat(packet, 25)*9.81;
         float a_accx = packFloat(packet, 29);
         float a_accy = packFloat(packet, 33);
         float a_accz = packFloat(packet, 37);
-        qDebug() << "bar1:" << bar1;
-        qDebug() << "bar2:" << bar2;
-        qDebug() << "temp1:" << temperature1;
-        qDebug() << "temp2:" << temperature2;
-        qDebug() << "acc linx:" <<  l_accx;
-        qDebug() << "acc liny:" << l_accy;
-        qDebug() << "acc linz:" << l_accz;
-        qDebug() << "acc angx:" << a_accx;
-        qDebug() << "acc angy:" << a_accy;
-        qDebug() << "acc angz:" << a_accz;
+//        qDebug() << "bar1:" << bar1;
+//        qDebug() << "bar2:" << bar2;
+//        qDebug() << "temp1:" << temperature1;
+//        qDebug() << "temp2:" << temperature2;
+//        qDebug() << "acc linx:" <<  l_accx;
+//        qDebug() << "acc liny:" << l_accy;
+//        qDebug() << "acc linz:" << l_accz;
+//        qDebug() << "acc angx:" << a_accx;
+//        qDebug() << "acc angy:" << a_accy;
+//        qDebug() << "acc angz:" << a_accz;
 
         RocketData data{};
         data.pressure1 = (bar1);
