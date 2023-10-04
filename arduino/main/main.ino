@@ -4,6 +4,7 @@ LoRa_E220 e220ttl(&Serial1, 2, 5, 7);  //  RX AUX M0 M1
 
 bool backend_connected = false;
 byte frequency = 0xFF;
+bool reference_flag = True;
 
 struct Packet {
   char startSeq;
@@ -175,4 +176,37 @@ void loop() {
 
 float randomFloat(float minf, float maxf) {
   return minf + random(1UL << 31) * (maxf - minf) / (1UL << 31);  // use 1ULL<<63 for max double values)
+}
+
+void serializeData(struct RocketData packet){
+  if (reference_flag) {
+    reference = (packet.bar1+packet.bar2)*0.5;
+    reference_flag = false;
+  }
+  float altitude = 44330 * (1.0 - pow((packet.bar1+packet.bar2)*0.5 / reference, 0.1903));
+  Serial.print(altitude);
+   Serial.print(" ");
+  // Serial.print(",PressureAverage:");
+   Serial.print((packet.bar1+packet.bar2)/2);
+   Serial.print(" ");
+  //Serial.print(",TemperatureAverage:");
+   Serial.println((packet.temp1+packet.temp2)/2);
+   Serial.print(" ");
+  // Serial.print(",ax:");
+   Serial.println(packet.ax);
+   Serial.print(" ");
+  // Serial.print(",ay:");
+   Serial.println(packet.ay);
+   Serial.print(" ");
+  // Serial.print(",az:");
+   Serial.println(packet.az);
+   Serial.print(" ");
+  // Serial.print(",gx:");
+   Serial.println(packet.gx);
+   Serial.print(" ");
+  // Serial.print(",gy:");
+   Serial.println(packet.gy);
+   Serial.print(" ");
+  // Serial.print(",gz:");
+   Serial.println(packet.gz);
 }
