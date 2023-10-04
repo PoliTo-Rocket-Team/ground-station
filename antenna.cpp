@@ -85,18 +85,24 @@ bool notAllJunk(QByteArray a) {
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
+    qDebug() << "UART: received" << data;
     // if(notAllJunk(data)) qDebug() << "UART:" << data;
 
-    if(buffer.size()) buffer.append(data);
+    if(open_packet) {
+        buffer.append(data);
+        qDebug() << " > appended";
+    }
     else {
         qsizetype p_start = data.indexOf((char)'\xAA');
         if(p_start == -1) return;
         buffer = data.last(data.size() - 1 - p_start);
+        open_packet = true;
     }
     readBuffer();
 }
 
 void Antenna::readBuffer() {
+    qDebug() << "Cerco C in" << buffer << "from index" << searchEndFrom;
     qsizetype p_end = buffer.indexOf((char)'\xBB', searchEndFrom);
     if(p_end == -1) searchEndFrom = buffer.size();
     else {
@@ -105,7 +111,10 @@ void Antenna::readBuffer() {
         handlePacket(packet);
 
         qsizetype p_start = buffer.indexOf((char)'\xAA', p_end);
-        if(p_start == -1) buffer.clear();
+        if(p_start == -1) {
+            buffer.clear();
+            open_packet = false;
+        }
         else {
             buffer.remove(0, p_start+1); // remove also \xBB
             readBuffer();
@@ -126,18 +135,26 @@ void Antenna::handlePacket(QByteArray packet){
     qDebug() << now - last << " Serial message: " << packet;
     last = now;
     switch (packet.at(0)){
-    case 'R':
+    case 'R': {
         // sending ready signal to arduino
         qDebug() << "Send [B]";
-//        sendToArduino('B');
-        arduino->write("B", 1);
+        arduino->write("BBBBB", 5);
+
+//        for(int i =0; i < 1000; i++) {
+//            arduino->write("BBBBB", 5);
+//            const bool r = arduino->flush();
+//            arduino->waitForBytesWritten();
+//            qDebug() << "Actually sent: " << r;
+//            qDebug() << "Serial error: " << arduino->error();
+//        }
         // arduino->waitForBytesWritten();
         if(!m_isArduinoConnected) {
             emit connectedChanged(m_isArduinoConnected = true);
             emit stateChanged(m_state = State::CONNECTED);
-            emit frequencyChanged(m_frequency = 23);
+
         }
         break;
+    }
     case 'C':
         if(m_state != State::CONNECTED){
             emit stateChanged(m_state = State::CONNECTED);
@@ -147,9 +164,12 @@ void Antenna::handlePacket(QByteArray packet){
     case 'E':
         emit errorChange(m_error = packet.at(1) - '0');
         break;
-    case 'D':
+    case 'D': {
+        if(m_state != State::CONNECTED){
+            emit stateChanged(m_state = State::CONNECTED);
+        }
         if(packet.size() != PACKET_SIZE) {
-            qDebug() << "Data packet has wrong diemsions";
+            qDebug() << "Data packet has wrong dimesions";
             break;
         }
         float bar1 = packFloat(packet, 1);
@@ -182,6 +202,9 @@ void Antenna::handlePacket(QByteArray packet){
         data.acc_ang = QVector3D(a_accx,a_accy,a_accz);
         emit newData(m_startTime.secsTo(QTime::currentTime()), data);
         break;
+    }
+    default:
+        qDebug() << "Not recognized";
     }
 }
 
