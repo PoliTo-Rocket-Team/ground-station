@@ -44,7 +44,7 @@ void Antenna::setFrequency(quint8 f) {
     emit stateChanged(m_state = State::POLLING);
     char msg[2] = { 'F', (char)f };
     arduino->write(msg,2);
-    QTimer::singleShot(5000, this, [this](){
+    QTimer::singleShot(20000, this, [this](){
         if(m_state == State::POLLING)
             emit stateChanged(m_state = State::DISCONNECTED);
     });
