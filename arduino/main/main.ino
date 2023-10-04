@@ -28,12 +28,6 @@ void setup() {
   Serial.begin(9600);
   e220ttl.begin();
   delay(500);
-
-  ResponseStructContainer c = e220ttl.getConfiguration();
-  Configuration configuration = *((Configuration *)c.data);
-  configuration.CHAN = 23;
-  e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
-  c.close();
 }
 
 void loop() {
@@ -49,7 +43,7 @@ void loop() {
           
           byte new_frequency;
           Serial.readBytes(&new_frequency, 1);
-          if(new_frequency == 0xFF) {
+          if(frequency == 0xFF) {
             // if first time, simply set freq
             ResponseStructContainer c = e220ttl.getConfiguration();
             Configuration configuration = *((Configuration *)c.data);
