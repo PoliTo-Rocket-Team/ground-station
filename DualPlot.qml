@@ -9,28 +9,32 @@ ChartView {
     property real spacing: 0.5;
     property int number: 1;
 
-    property color lineColor: "gray";
     property real minTimeDelta: 10;
 
-    function add(time, value, index = 0) {
-        if(index < 0 || index >= number) return;
-        series.itemAt(index).append(time, value);
+    function add(time, a, b) {
+        series_1.append(time, a);
+        series_2.append(time, b);
+
+        let _min = a, _max = b;
+        if(a > b) {
+            _min = b;
+            _max = a;
+        }
+
         if(internal.first) {
             internal.first = false;
             timeAxis.min = time;
             timeAxis.max = time + minTimeDelta;
-            internal.min = value - spacing;
-            internal.max = value + spacing;
+            internal.min = _min - spacing;
+            internal.max = _max + spacing;
         }
         else if(time > timeAxis.max) timeAxis.max = time;
-        if(value < internal.min) internal.min = value - spacing;
-        else if(value > internal.max) internal.max = value + spacing;
+        if(_min < internal.min) internal.min = _min - spacing;
+        else if(_max > internal.max) internal.max = _max + spacing;
     }
     function clear() {
-        for(var i=0; i<number; i++) {
-            console.log(i, series.itemAt(i));
-            // series.itemAt(i).clear();
-        }
+        series_1.clear();
+        series_2.clear();
         internal.first = true;
     }
 
@@ -53,14 +57,16 @@ ChartView {
         min: adaptive ? internal.min : cv.min;
         max: adaptive ? internal.max : cv.max;
     }
-    Repeater {
-        id: series;
-        model: number;
-        LineSeries {
-            axisX: timeAxis;
-            axisY: axisY;
-            color: lineColor;
-        }
+    LineSeries {
+        id: series_1
+        axisX: timeAxis;
+        axisY: axisY;
+        color: "#ee682b";
     }
-
+    LineSeries {
+        id: series_2
+        axisX: timeAxis;
+        axisY: axisY;
+        color: "#121212";
+    }
 }

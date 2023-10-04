@@ -15,15 +15,13 @@ Window {
     Connections {
         target: Antenna
         function onConnectedChanged(connected){
-             if(connected) frequency_popup.open();
+            // if(connected) frequency_popup.open();
         }
         function onNewData(time, data) {;
             acc_lin.add(time, data.acc_lin);
             acc_ang.add(time, data.acc_ang);
-            pressure.add(time, data.pressure1, 0);
-            pressure.add(time, data.pressure2, 1);
-            temperature.add(time, data.temperature1, 0);
-            temperature.add(time, data.temperature2, 1);
+            pressure.add(time, data.pressure1, data.pressure2)
+            temperature.add(time, data.temperature1, data.temperature2);
         }
         function onFrequencyChanged() {
             acc_lin.clear();
@@ -270,41 +268,39 @@ Window {
                 }
                 VectorPlot {
                     id: acc_lin;
-                    title: "Linear acceleration"
+                    title: "Linear acceleration (m/s^2)"
                     minTimeDelta: 60;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
                 }
                 VectorPlot {
                     id: acc_ang;
-                    title: "Angular acceleration"
+                    title: "Angular velocity (rad/s)"
                     minTimeDelta: 60;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
                 }
-                VariablePlot {
+                DualPlot {
                     id: pressure;
-                    title: "Pressure";
-                    min: 300;
+                    title: "Pressure (hPa)";
+                    min: 500;
                     max: 1100;
                     minTimeDelta: 60;
                     spacing: 10;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
-                    lineColor: "#f9a73e"
                     adaptive: adaptive.checked;
                     number: 2;
                 }
-                VariablePlot {
+                DualPlot {
                     id: temperature;
-                    title: "Barometer";
-                    min: 300;
-                    max: 1100;
+                    title: "Temperature (°C)";
+                    min: 20;
+                    max: 60;
                     minTimeDelta: 60;
-                    spacing: 10;
+                    spacing: 2;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
-                    lineColor: "#f9a73e"
                     adaptive: adaptive.checked;
                     number: 2;
                 }
