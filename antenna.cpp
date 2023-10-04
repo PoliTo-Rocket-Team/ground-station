@@ -21,8 +21,9 @@ RocketData::RocketData(std::byte* raw)
     acc_ang(vectorFromBytes(raw+24))
 {
     std::memcpy(&pressure1, raw, 4);
-    std::memcpy(&temperature1, raw+4, 4);
-    //std::memcpy(&barometer, raw+8, 4);
+    std::memcpy(&pressure2, raw+4, 4);
+    std::memcpy(&temperature1, raw+8, 4);
+    std::memcpy(&temperature2, raw+12, 4);
 }
 
 
@@ -152,15 +153,19 @@ void Antenna::handlePacket(QByteArray packet){
             break;
         }
         float bar1 = packFloat(packet, 1);
-        float temperature1 = packFloat(packet, 5);
-        float l_accx = packFloat(packet, 9);
-        float l_accy = packFloat(packet, 13);
-        float l_accz = packFloat(packet, 17);
-        float a_accx = packFloat(packet, 21);
-        float a_accy = packFloat(packet, 25);
-        float a_accz = packFloat(packet, 29);
+        float bar2 = packFloat(packet, 5);
+        float temperature1 = packFloat(packet, 9);
+        float temperature2 = packFloat(packet, 13);
+        float l_accx = packFloat(packet, 17);
+        float l_accy = packFloat(packet, 21);
+        float l_accz = packFloat(packet, 25);
+        float a_accx = packFloat(packet, 29);
+        float a_accy = packFloat(packet, 33);
+        float a_accz = packFloat(packet, 37);
         qDebug() << "bar1:" << bar1;
+        qDebug() << "bar2:" << bar2;
         qDebug() << "temp1:" << temperature1;
+        qDebug() << "temp2:" << temperature2;
         qDebug() << "acc linx:" <<  l_accx;
         qDebug() << "acc liny:" << l_accy;
         qDebug() << "acc linz:" << l_accz;
@@ -170,7 +175,9 @@ void Antenna::handlePacket(QByteArray packet){
 
         RocketData data{};
         data.pressure1 = (bar1);
+        data.pressure2 = (bar2);
         data.temperature1 = temperature1;
+        data.temperature2 = temperature2;
         data.acc_lin = QVector3D(l_accx,l_accy,l_accz);
         data.acc_ang = QVector3D(a_accx,a_accy,a_accz);
         emit newData(m_startTime.secsTo(QTime::currentTime()), data);
