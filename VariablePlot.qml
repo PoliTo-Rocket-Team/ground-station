@@ -12,7 +12,7 @@ ChartView {
     property color lineColor: "gray";
     property real minTimeDelta: 10;
 
-    function add(time: float, value: float, index: int = 0) {
+    function add(time, value, index = 0) {
         if(index < 0 || index >= number) return;
         series.itemAt(index).append(time, value);
         if(internal.first) {
