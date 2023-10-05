@@ -30,7 +30,7 @@ RocketData::RocketData(std::byte* raw)
 
 Antenna::Antenna(QObject *parent)
     : QObject{parent},
-    buffer()
+    payload(sizeof(RocketData), 0x00)
 {
     scanTimer = new QTimer(this);
     connect(scanTimer,&QTimer::timeout,this,&Antenna::openSerialPort);
@@ -82,70 +82,88 @@ bool notAllJunk(QByteArray a) {
     return false;
 }
 
+qsizetype getPayloadLengthOf(char c) {
+    switch(c) {
+    case 'D': return sizeof(RocketData);
+    case 'E': return 1;
+    case 'C':
+    case 'R':
+        return 0;
+    default:
+        return -1;
+    }
+}
+
 void Antenna::readData()
 {
     QByteArray data = arduino->readAll();
     // qDebug() << "UART: received" << data;
     // if(notAllJunk(data)) qDebug() << "UART:" << data;
 
-    if(open_packet) {
-        buffer.append(data);
-    }
-    else {
-        qsizetype p_start = data.indexOf((char)'\xAA');
-        if(p_start == -1) return;
-        buffer = data.last(data.size() - 1 - p_start);
-        open_packet = true;
-    }
-    readBuffer();
-}
-
-void Antenna::readBuffer() {
-    qsizetype p_end = buffer.indexOf((char)'\xBB', searchEndFrom);
-    if(p_end == -1) searchEndFrom = buffer.size();
-    else {
-        searchEndFrom = 0;
-        QByteArray packet = buffer.first(p_end);
-        handlePacket(packet);
-
-        qsizetype p_start = buffer.indexOf((char)'\xAA', p_end);
-        if(p_start == -1) {
-            buffer.clear();
-            open_packet = false;
+    if(remaining_bytes) {
+        if(data.size() < remaining_bytes) {
+            payload.append(data);
+            remaining_bytes -= data.size();
         }
         else {
-            buffer.remove(0, p_start+1); // remove also \xBB
-            readBuffer();
+            payload.append(data.first(remaining_bytes));
+            handlePayload();
+            goForward(data, remaining_bytes);
         }
+    }
+    else if(current_code == 0x05) startPayloadAt(data,0);
+    else goForward(data, 0);
+}
+
+void Antenna::goForward(QByteArray& a, qsizetype from) {
+    if(from >= a.size()) {
+        current_code = 0x00;
+        remaining_bytes = 0;
+        return;
+    }
+    auto start = a.indexOf('~',from)+1;
+    if(start == 0) {
+        current_code = 0x00;
+        remaining_bytes = 0;
+    }
+    else if(start == a.size()) {
+        current_code = 0x05;
+        remaining_bytes = 0;
+    }
+    else startPayloadAt(a, start);
+}
+
+void Antenna::startPayloadAt(QByteArray& a, qsizetype from) {
+    current_code = a.at(from);
+    remaining_bytes = getPayloadLengthOf(current_code);
+    if(remaining_bytes == -1) goForward(a, from);
+    else if(remaining_bytes == 0) {
+        handlePayload();
+        goForward(a, from+1);
+    }
+    else if(from + remaining_bytes <= a.size() - 1) {
+        payload = a.sliced(from+1, remaining_bytes);
+        handlePayload();
+        goForward(a,from+remaining_bytes+1);
+    }
+    else {
+        const auto num = a.size() - 1 - from;
+        payload = a.last(num);
+        remaining_bytes -= num;
     }
 }
 
-float packFloat(QByteArray & a, qsizetype from) {
-    char f[4];
-    for (int i = 0; i < 4; i++) f[i] = a.at(from + i);
-    return *((float*) &f);
-}
-
-void Antenna::handlePacket(QByteArray packet){
+void Antenna::handlePayload() {
     static auto last = QDateTime::currentMSecsSinceEpoch();
     static qint64 now;
     now = QDateTime::currentMSecsSinceEpoch();
-    qDebug() << now - last << " Serial message: " << packet;
+    qDebug() << now - last << current_code << " -> " << payload;
     last = now;
-    switch (packet.at(0)){
+    switch (current_code){
     case 'R': {
         // sending ready signal to arduino
         qDebug() << "Send [B]";
         arduino->write("BBBBB", 5);
-
-//        for(int i =0; i < 1000; i++) {
-//            arduino->write("BBBBB", 5);
-//            const bool r = arduino->flush();
-//            arduino->waitForBytesWritten();
-//            qDebug() << "Actually sent: " << r;
-//            qDebug() << "Serial error: " << arduino->error();
-//        }
-        // arduino->waitForBytesWritten();
         if(!m_isArduinoConnected) {
             emit connectedChanged(m_isArduinoConnected = true);
             emit stateChanged(m_state = State::CONNECTED);
@@ -160,50 +178,29 @@ void Antenna::handlePacket(QByteArray packet){
         }
         break;
     case 'E':
-        emit errorChange(m_error = packet.at(1) - '0');
+        emit errorChange(m_error = payload.at(0) - '0');
         break;
     case 'D': {
         if(m_state != State::CONNECTED){
             emit stateChanged(m_state = State::CONNECTED);
         }
-        if(packet.size() != PACKET_SIZE) {
-            qDebug() << "Data packet has wrong dimesions";
-            break;
-        }
-        float bar1 = packFloat(packet, 1);
-        float bar2 = packFloat(packet, 5);
-        float temperature1 = packFloat(packet, 9);
-        float temperature2 = packFloat(packet, 13);
-        float l_accx = packFloat(packet, 17)*9.81;
-        float l_accy = packFloat(packet, 21)*9.81;
-        float l_accz = packFloat(packet, 25)*9.81;
-        float a_accx = packFloat(packet, 29);
-        float a_accy = packFloat(packet, 33);
-        float a_accz = packFloat(packet, 37);
-//        qDebug() << "bar1:" << bar1;
-//        qDebug() << "bar2:" << bar2;
-//        qDebug() << "temp1:" << temperature1;
-//        qDebug() << "temp2:" << temperature2;
-//        qDebug() << "acc linx:" <<  l_accx;
-//        qDebug() << "acc liny:" << l_accy;
-//        qDebug() << "acc linz:" << l_accz;
-//        qDebug() << "acc angx:" << a_accx;
-//        qDebug() << "acc angy:" << a_accy;
-//        qDebug() << "acc angz:" << a_accz;
-
         RocketData data{};
-        data.pressure1 = (bar1);
-        data.pressure2 = (bar2);
-        data.temperature1 = temperature1;
-        data.temperature2 = temperature2;
-        data.acc_lin = QVector3D(l_accx,l_accy,l_accz);
-        data.acc_ang = QVector3D(a_accx,a_accy,a_accz);
+        data.pressure1 = packFloat(0);
+        data.pressure2 = packFloat(4);
+        data.temperature1 = packFloat(8);
+        data.temperature2 = packFloat(12);
+        data.acc_lin = QVector3D(packFloat(16), packFloat(20), packFloat(24));
+        data.acc_ang = QVector3D(packFloat(28), packFloat(32), packFloat(36));
         emit newData(m_startTime.secsTo(QTime::currentTime()), data);
         break;
     }
-    default:
-        qDebug() << "Not recognized";
     }
+}
+
+float Antenna::packFloat(qsizetype from) {
+    char f[4];
+    for (int i = 0; i < 4; i++) f[i] = payload.at(from + i);
+    return *((float*) &f);
 }
 
 int Antenna::sendToArduino(quint8 data){

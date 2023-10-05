@@ -69,8 +69,7 @@ private:
      * It is false at startup and during frequency change. Becomes true upon receiving [C]
      */
     bool m_isArduinoConnected = false;
-    // +1 for the packet code
-    int PACKET_SIZE = sizeof(RocketData) + 1;
+
     State m_state = State::DISCONNECTED;
     /*
      * Error code
@@ -91,16 +90,18 @@ private:
     QTime m_startTime;
     QSerialPort *arduino;
     void openSerialPort();
-    int sendToArduino(quint8 data);
-    QByteArray buffer;
-    qsizetype remaining_bytes = 0;
-    bool open_packet = false;
-    void handlePacket(QByteArray packet);
-    void readBuffer();
-
     QTimer *scanTimer;
+    int sendToArduino(quint8 data);
 
-    qsizetype searchEndFrom = 0;
+
+    // payload-related members
+    QByteArray payload;
+    qsizetype remaining_bytes = 0;
+    char current_code = 0x00;
+    void goForward(QByteArray& a, qsizetype from);
+    void startPayloadAt(QByteArray& a, qsizetype from);
+    void handlePayload();
+    float packFloat(qsizetype from);
 
 private slots:
     void readData();
