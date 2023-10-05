@@ -14,8 +14,8 @@ Window {
 
     Connections {
         target: Antenna
-        function onConnectedChanged(connected){
-            // if(connected) frequency_popup.open();
+        function onStateChanged(s){
+            if(s === Antenna.OFFLINE) frequency_popup.open();
         }
         function onNewData(time, data) {;
             acc_lin.add(time, data.acc_lin);
@@ -110,15 +110,23 @@ Window {
 
     Message {
         anchors.centerIn: parent
-        visible: !Antenna.isArduinoConnected
+        visible: Antenna.state === Antenna.SCANNING
         width: 400;
-        title: "Serial connection";
+        title: "Scanning for Arduino";
         description: "Waiting for a serial signal from the Arduino. If you haven't yet, please plug it in."
+    }
+
+    Message {
+        anchors.centerIn: parent
+        visible: Antenna.state === Antenna.OPENING_SERIAL
+        width: 560;
+        title: "Opening serial port";
+        description: `Trying to connect to the board "${Antenna.boardName}" on port ${Antenna.portName}. The connection won't be successful unless the ground-station arduino code has been uploaded to the board. Should this message persist, close the application, open and close the serial monitor of the Arduino IDE, and finally re-open the application.`
     }
 
     Grid {
         anchors.fill: parent;
-        visible: Antenna.isArduinoConnected;
+        visible: Antenna.state === Antenna.OFFLINE || Antenna.state === Antenna.ONLINE || Antenna.state === Antenna.POLLING;
         rows: 1; columns: 2;
 
         Rectangle {
@@ -144,6 +152,26 @@ Window {
                         weight: Font.Bold;
                     }
                 }
+                Column {
+                    spacing: 5;
+                    Text {
+                        text: "Board"
+                        color: "#efefef"
+                        font {
+                            pointSize: 14;
+                            weight: Font.Bold;
+                        }
+                    }
+                    Text {
+                        text: "Port: " + Antenna.portName;
+                        color: "#efefef";
+                    }
+                    Text {
+                        text: "Name: " + Antenna.boardName;
+                        color: "#efefef";
+                    }
+                }
+
                 Column {
                     spacing: 5;
                     Text {
@@ -234,12 +262,20 @@ Window {
             Message {
                 width: 350
                 anchors.centerIn: parent
-                visible: Antenna.state !== Antenna.CONNECTED;
-                title: Antenna.state === Antenna.POLLING ? "Polling" : "Disconnected";
-                description: Antenna.state === Antenna.POLLING
-                             ? `Waiting for a signal from the rocket at frequency ${Antenna.frequency+850} MHz`
-                             : nofreq ? "No frequency was selected" : "No signal was received from the rocket";
+                visible: Antenna.state === Antenna.POLLING;
+                title: "Polling";
+                description: `Waiting for a signal from the rocket at frequency ${Antenna.frequency+850} MHz`;
             }
+
+            Message {
+                width: 350
+                anchors.centerIn: parent
+                visible: Antenna.state === Antenna.OFFLINE;
+                title: "Offline";
+                description: nofreq ? "No frequency was selected" : "No signal was received from the rocket";
+            }
+
+
 
             Message {
                 width: 350

@@ -31,19 +31,21 @@ class Antenna : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(bool isArduinoConnected READ isConnected NOTIFY connectedChanged)
     Q_PROPERTY(quint8 error READ getError NOTIFY errorChange)
     Q_PROPERTY(quint8 frequency READ getFrequency WRITE setFrequency NOTIFY frequencyChanged)
     Q_PROPERTY(State state READ getState NOTIFY stateChanged)
+    Q_PROPERTY(QString portName READ getPortName NOTIFY portNameChanged)
+    Q_PROPERTY(QString boardName READ getBoardName NOTIFY boardNameChanged)
 
 public:
     explicit Antenna(QObject *parent = nullptr);
 
-    enum State { POLLING, DISCONNECTED, CONNECTED };
+    enum State { SCANNING, OPENING_SERIAL, OFFLINE, POLLING, ONLINE };
     Q_ENUM(State)
 
-    bool isConnected() const { return m_isArduinoConnected; };
     State getState() const { return m_state; };
+    QString getPortName() const { return portName; };
+    QString getBoardName() const { return boardName; };
     quint8 getError() const { return m_error; };
     quint8 getFrequency() const { return m_frequency; };
 
@@ -63,14 +65,9 @@ public:
     Q_INVOKABLE void reset();
 
 private:
-    /*
-     * Whether the app is connected to the rocket.
-     *
-     * It is false at startup and during frequency change. Becomes true upon receiving [C]
-     */
-    bool m_isArduinoConnected = false;
-
-    State m_state = State::DISCONNECTED;
+    State m_state = State::SCANNING;
+    QString portName;
+    QString boardName;
     /*
      * Error code
      *
@@ -107,8 +104,9 @@ private slots:
     void readData();
 
 signals:
-    void connectedChanged(bool);
     void stateChanged(Antenna::State state);
+    void portNameChanged(QString name);
+    void boardNameChanged(QString name);
     void frequencyChanged(quint8 f);
     void errorChange(quint8 e);
     void newData(int ms, RocketData data);

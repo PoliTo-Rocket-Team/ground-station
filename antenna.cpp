@@ -46,7 +46,7 @@ void Antenna::setFrequency(quint8 f) {
     arduino->write(msg,2);
     QTimer::singleShot(20000, this, [this](){
         if(m_state == State::POLLING)
-            emit stateChanged(m_state = State::DISCONNECTED);
+            emit stateChanged(m_state = State::OFFLINE);
     });
 }
 
@@ -60,19 +60,24 @@ void Antenna::openSerialPort()
             portInfo.manufacturer().toLower().contains("arduino") ||
             portInfo.description().toLower().contains("arduino")
         ){
-            arduino->setPortName(portInfo.systemLocation());
+            emit boardNameChanged(boardName = portInfo.description());
+            emit portNameChanged(portName = portInfo.portName());
+            emit stateChanged(m_state = State::OPENING_SERIAL);
+            arduino->setPortName(portName);
             arduino->setBaudRate(QSerialPort::Baud9600);
             arduino->setDataBits(QSerialPort::Data8);
             arduino->setParity(QSerialPort::NoParity);
             arduino->setStopBits(QSerialPort::OneStop);
             arduino->setFlowControl(QSerialPort::NoFlowControl);
 
-            if(!arduino->open(QIODevice::ReadWrite)){
-                qDebug() << "Error in opening port " << portInfo.portName() << ", code " << arduino->error();
+            if(arduino->open(QIODevice::ReadWrite)){
+                scanTimer->stop();
                 return;
             }
-            scanTimer->stop();
-            break;
+            else {
+                qDebug() << "Error in opening port " << portName << ", code " << arduino->error();
+                emit stateChanged(m_state = State::SCANNING);
+            }
         }
     }
 }
@@ -164,16 +169,15 @@ void Antenna::handlePayload() {
         // sending ready signal to arduino
         qDebug() << "Send [B]";
         arduino->write("BBBBB", 5);
-        if(!m_isArduinoConnected) {
-            emit connectedChanged(m_isArduinoConnected = true);
-            emit stateChanged(m_state = State::CONNECTED);
+        if(m_state == State::OPENING_SERIAL) {
+            emit stateChanged(m_state = State::OFFLINE);
             emit frequencyChanged(m_frequency = 23);
         }
         break;
     }
     case 'C':
-        if(m_state != State::CONNECTED){
-            emit stateChanged(m_state = State::CONNECTED);
+        if(m_state != State::ONLINE){
+            emit stateChanged(m_state = State::ONLINE);
             m_startTime = QTime::currentTime();
         }
         break;
@@ -181,8 +185,8 @@ void Antenna::handlePayload() {
         emit errorChange(m_error = payload.at(0) - '0');
         break;
     case 'D': {
-        if(m_state != State::CONNECTED){
-            emit stateChanged(m_state = State::CONNECTED);
+        if(m_state != State::ONLINE){
+            emit stateChanged(m_state = State::ONLINE);
         }
         RocketData data{};
         data.pressure1 = packFloat(0);
