@@ -7,7 +7,8 @@
 #include <unistd.h>
 #include <QRandomGenerator>
 #include <QDateTime>
-
+#include <iostream>
+#include <fstream>
 QVector3D vectorFromBytes(std::byte* raw) {
     float x, y, z;
     std::memcpy(&x, raw, 4);
@@ -197,6 +198,7 @@ void Antenna::handlePayload() {
         break;
     case 'D': {
         confirmOnline();
+        std::ofstream outputFile("Data_Log.txt");
         RocketData data{};
         data.pressure1 = packFloat(0);
         data.pressure2 = packFloat(4);
@@ -204,6 +206,7 @@ void Antenna::handlePayload() {
         data.temperature2 = packFloat(12);
         data.acc_lin = QVector3D(packFloat(16), packFloat(20), packFloat(24));
         data.acc_ang = QVector3D(packFloat(28), packFloat(32), packFloat(36));
+        outputFile << data.pressure1 << data.pressure2 << data.temperature1 << data.temperature2 << data.acc_lin.x() << data.acc_lin.y() << data.acc_lin.z()  << data.acc_ang.x() << data.acc_ang.y() << data.acc_ang.z();
         emit newData(m_startTime.secsTo(QTime::currentTime()), data);
         break;
     }
