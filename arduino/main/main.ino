@@ -91,9 +91,8 @@ void loop() {
         }
       case 'D':
         {
-          Serial.write(0xAA);
+          Serial.write('~');
           Serial.write((byte*) &packet, sizeof(RocketData));
-          Serial.write(0xBB);
           break;
         }
       default:
@@ -108,9 +107,8 @@ float randomFloat(float minf, float maxf) {
 }
 
 void sendCharToApp(char c) {
-  Serial.write(0xAA);
+  Serial.write('~');
   Serial.write(c);
-  Serial.write(0xBB);
 }
 
 void changeFrequency(byte new_freq) {
