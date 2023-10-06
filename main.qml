@@ -15,7 +15,7 @@ Window {
     Connections {
         target: Antenna
         function onStateChanged(s){
-            if(s === Antenna.OFFLINE) frequency_popup.open();
+            if(s === Antenna.OFFLINE && Antenna.frequency === 255) frequency_popup.open();
         }
         function onNewData(time, data) {;
             acc_lin.add(time, data.acc_lin);
@@ -36,7 +36,8 @@ Window {
     Popup {
         id: frequency_popup
         modal: true;
-        closePolicy: nofreq ? Dialog.NoAutoClose : Dialog.CloseOnEscape;
+        closePolicy: Dialog.CloseOnEscape
+        // closePolicy: nofreq ? Dialog.NoAutoClose : Dialog.CloseOnEscape;
         anchors.centerIn: parent;
         padding: 15;
         width: 350;
@@ -52,7 +53,7 @@ Window {
             spacing: 5;
             anchors.fill: parent;
             Text {
-                text: `${nofreq ? "Set" : "Change"} frequency`;
+                text: `${Antenna.state === Antenna.OFFLINE ? "Set" : "Change"} frequency`;
                 color: "#212121";
                 font {
                     weight: Font.DemiBold;
@@ -100,7 +101,7 @@ Window {
                     }
                 }
                 UIButton {
-                    visible: !nofreq;
+                    // visible: !nofreq;
                     text: "Cancel";
                     onClicked: frequency_popup.close();
                 }
@@ -183,7 +184,7 @@ Window {
                         }
                     }
                     Text {
-                        text: nofreq ? "Not set" : `${Antenna.frequency + 850}MHz`;
+                        text: nofreq ? "Previous value" : `${Antenna.frequency + 850}MHz`;
                         color: "#efefef"
                     }
                     Item { width: 1; height: 3; }
@@ -272,7 +273,7 @@ Window {
                 anchors.centerIn: parent
                 visible: Antenna.state === Antenna.OFFLINE;
                 title: "Offline";
-                description: nofreq ? "No frequency was selected" : "No signal was received from the rocket";
+                description: nofreq ? "No frequency was selected" : "No signal is received from the rocket";
             }
 
 
@@ -280,7 +281,7 @@ Window {
             Message {
                 width: 350
                 anchors.centerIn: parent
-                visible: Antenna.state === Antenna.CONNECTED && Antenna.error !== 0;
+                visible: Antenna.state === Antenna.ONLINE && Antenna.error !== 0;
                 title: `${getFaultingComponent(Antenna.error)} not working`;
                 description: `Error #${Antenna.error}`
 
@@ -295,7 +296,7 @@ Window {
             }
 
             GridLayout {
-                visible: Antenna.state === Antenna.CONNECTED && Antenna.error === 0;
+                visible: Antenna.state === Antenna.ONLINE && Antenna.error === 0;
                 rows: 2;
                 columns: 2;
                 anchors {
@@ -304,7 +305,7 @@ Window {
                 }
                 VectorPlot {
                     id: acc_lin;
-                    title: "Linear acceleration (m/s^2)"
+                    title: "Linear acceleration (g)"
                     minTimeDelta: 60;
                     Layout.fillWidth: true;
                     Layout.fillHeight: true;
