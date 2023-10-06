@@ -9,6 +9,10 @@
 #include <QDateTime>
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <iomanip>
+using namespace std;
+ofstream fout;
 QVector3D vectorFromBytes(std::byte* raw) {
     float x, y, z;
     std::memcpy(&x, raw, 4);
@@ -51,6 +55,16 @@ void Antenna::setFrequency(quint8 f) {
 //        if(m_state == State::POLLING)
 //            emit stateChanged(m_state = State::OFFLINE);
 //    });
+}
+
+void Antenna::OpenOutputFile(){
+    fout.open("Data_Log.txt");
+}
+
+void Antenna::CloseOutputFile(){
+    
+    fout.close();
+    
 }
 
 void Antenna::openSerialPort()
@@ -198,7 +212,6 @@ void Antenna::handlePayload() {
         break;
     case 'D': {
         confirmOnline();
-        std::ofstream outputFile("Data_Log.txt");
         RocketData data{};
         data.pressure1 = packFloat(0);
         data.pressure2 = packFloat(4);
@@ -206,7 +219,9 @@ void Antenna::handlePayload() {
         data.temperature2 = packFloat(12);
         data.acc_lin = QVector3D(packFloat(16), packFloat(20), packFloat(24));
         data.acc_ang = QVector3D(packFloat(28), packFloat(32), packFloat(36));
-        outputFile <<"bar1:"<< data.pressure1<<"bar2:" << data.pressure2<<"temp1:" << data.temperature1<<"temp2:" << data.temperature2<<"acc_lin:" << data.acc_lin.x()<<";" << data.acc_lin.y()<<";" << data.acc_lin.z()<<"acc_ang:"  << data.acc_ang.x()<<";" << data.acc_ang.y()<<";" << data.acc_ang.z();
+        if(fout){
+            fout <<"bar1: "<< data.pressure1<<" bar2: " << data.pressure2<<" temp1: " << data.temperature1<<" temp2: " << data.temperature2<<" acc_lin: " << data.acc_lin.x()<<"; " << data.acc_lin.y()<<"; " << data.acc_lin.z()<<" acc_ang: "  << data.acc_ang.x()<<"; " << data.acc_ang.y()<<"; " << data.acc_ang.z() << "\n";
+        }
         emit newData(m_startTime.secsTo(QTime::currentTime()), data);
         break;
     }

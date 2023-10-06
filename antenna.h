@@ -6,7 +6,11 @@
 #include <QTime>
 #include <QVector3D>
 #include <QSerialPort>
-
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <iomanip>
+using namespace std;
 struct RocketData {
     Q_GADGET
     Q_PROPERTY(float pressure1 MEMBER pressure1);
@@ -63,6 +67,10 @@ public:
      * Resets the antenna as if it was the app startup
      */
     Q_INVOKABLE void reset();
+
+    Q_INVOKABLE void OpenOutputFile();
+
+    Q_INVOKABLE void CloseOutputFile();
 
 private:
     State m_state = State::SCANNING;
