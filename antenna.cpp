@@ -40,14 +40,16 @@ Antenna::Antenna(QObject *parent)
 }
 
 void Antenna::setFrequency(quint8 f) {
+    old_frequency = m_frequency;
+    const char option = m_state == State::OFFLINE ? 'F' : 'C';
     emit frequencyChanged(m_frequency = f);
     emit stateChanged(m_state = State::POLLING);
-    char msg[2] = { 'F', (char)f };
-    arduino->write(msg,2);
-    QTimer::singleShot(20000, this, [this](){
-        if(m_state == State::POLLING)
-            emit stateChanged(m_state = State::OFFLINE);
-    });
+    char msg[3] = { 'F', option, (char)f };
+    arduino->write(msg,3);
+//    QTimer::singleShot(2000, this, [this](){
+//        if(m_state == State::POLLING)
+//            emit stateChanged(m_state = State::OFFLINE);
+//    });
 }
 
 void Antenna::openSerialPort()
@@ -91,8 +93,9 @@ qsizetype getPayloadLengthOf(char c) {
     switch(c) {
     case 'D': return sizeof(RocketData);
     case 'E': return 1;
-    case 'C':
     case 'R':
+    case 'G':
+    case 'C':
         return 0;
     default:
         return -1;
@@ -158,36 +161,42 @@ void Antenna::startPayloadAt(QByteArray& a, qsizetype from) {
     }
 }
 
+void Antenna::confirmOnline() {
+    if(m_state == State::ONLINE) return;
+    emit stateChanged(m_state = State::ONLINE);
+    m_startTime = QTime::currentTime();
+    old_frequency = m_frequency;
+}
+
 void Antenna::handlePayload() {
     static auto last = QDateTime::currentMSecsSinceEpoch();
     static qint64 now;
     now = QDateTime::currentMSecsSinceEpoch();
-    qDebug() << now - last << current_code << " -> " << payload;
+    qDebug() << now - last << current_code;
     last = now;
     switch (current_code){
-    case 'R': {
-        // sending ready signal to arduino
-        qDebug() << "Send [B]";
-        arduino->write("BBBBB", 5);
-        if(m_state == State::OPENING_SERIAL) {
+    case 'R':
+        // rollback
+        emit frequencyChanged(m_frequency = old_frequency);
+        emit stateChanged(m_state = State::ONLINE);
+        break;
+    case 'G': {
+        // Ground-station internal comunication check
+        qDebug() << "Send [G] back";
+        arduino->write("GGGGG", 5);
+        if(m_state != State::ONLINE && m_state != State::OFFLINE) {
             emit stateChanged(m_state = State::OFFLINE);
-            emit frequencyChanged(m_frequency = 23);
         }
         break;
     }
     case 'C':
-        if(m_state != State::ONLINE){
-            emit stateChanged(m_state = State::ONLINE);
-            m_startTime = QTime::currentTime();
-        }
+        confirmOnline();
         break;
     case 'E':
         emit errorChange(m_error = payload.at(0) - '0');
         break;
     case 'D': {
-        if(m_state != State::ONLINE){
-            emit stateChanged(m_state = State::ONLINE);
-        }
+        confirmOnline();
         RocketData data{};
         data.pressure1 = packFloat(0);
         data.pressure2 = packFloat(4);

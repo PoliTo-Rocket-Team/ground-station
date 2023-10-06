@@ -9,7 +9,6 @@ bool backend_connected = false;
 byte frequency = 0xFF;
 
 void changeFrequency(byte);
-void sendCharToApp(char);
 
 struct RocketData {
   char code;
@@ -36,34 +35,29 @@ void loop() {
     char inChar;
     Serial.readBytes(&inChar, 1);
     switch (inChar) {
-      case 'B':
+      case 'G':
         backend_connected = true;
         break;
       case 'F':
         {
-          
+          Serial.readBytes(&inChar,1);
           byte new_frequency;
           Serial.readBytes(&new_frequency, 1);
-          // if(frequency == 0xFF) {
-          //   // if first time, simply set freq
-          //   ResponseStructContainer c = e220ttl.getConfiguration();
-          //   Configuration configuration = *((Configuration *)c.data);
-          //   configuration.ADDL = 0x03;
-	        //   configuration.ADDH = 0x00;
-          //   configuration.CHAN = frequency = new_frequency;
-          //   e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
-          //   c.close();
-          //   Serial.write(0xAA);
-          //   Serial.write("CN",2);
-          //   Serial.write(0xBB);
-          //   // sendCharToApp('C');
-          // }
-          // else {
-          //   if(frequency != new_frequency) {
-          //     changeFrequency(new_frequency);
-          //   }
-          // }
-          changeFrequency(new_frequency);
+          if(inChar == 'F') { 
+            // Force frequency change
+            ResponseStructContainer c = e220ttl.getConfiguration();
+            Configuration configuration = *((Configuration *)c.data);
+            // configuration.ADDL = 0x03;
+	          // configuration.ADDH = 0x00;
+            configuration.CHAN = frequency = new_frequency;
+            e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
+            c.close();
+            Serial.write("~G", 2);
+          }
+          else { 
+            // complete procedure
+            changeFrequency(new_frequency);
+          }
           break;
         }
     }
@@ -71,7 +65,7 @@ void loop() {
 
   if (!backend_connected) {
     // Sending Ready Signal to Backend
-    sendCharToApp('R');
+    Serial.write("~G",2);
     delay(250);
     return;
   }
@@ -84,9 +78,9 @@ void loop() {
     switch (packet.code) {
       case 'C':
         {
-          delay(100);
-          e220ttl.sendMessage("C");
-          sendCharToApp('C');
+          delay(10);
+          e220ttl.sendMessage("CCCCC");
+          Serial.write("~C",2);
           break;
         }
       case 'D':
@@ -99,16 +93,11 @@ void loop() {
         break;
     }
   }
-  delay(500);
+  delay(100);
 }
 
 float randomFloat(float minf, float maxf) {
   return minf + random(1UL << 31) * (maxf - minf) / (1UL << 31);  // use 1ULL<<63 for max double values)
-}
-
-void sendCharToApp(char c) {
-  Serial.write('~');
-  Serial.write(c);
 }
 
 void changeFrequency(byte new_freq) {
@@ -145,8 +134,8 @@ void changeFrequency(byte new_freq) {
         packet = *(RocketData*)incoming.data;
         incoming.close();
         if (packet.code == 'C' || packet.code == 'D') {
-          e220ttl.sendMessage("C");
-          sendCharToApp('C');
+          e220ttl.sendMessage("CCCCC");
+          Serial.write("~C",2);
           ok = true;
         }
       }
@@ -154,11 +143,12 @@ void changeFrequency(byte new_freq) {
 
     if (ok) break;
     // switching back to old frequency
-    config.ADDL = 0x03;
-	  config.ADDH = 0x00;
+    // config.ADDL = 0x03;
+	  // config.ADDH = 0x00;
     config.CHAN = old_freq;
     e220ttl.setConfiguration(config, WRITE_CFG_PWR_DWN_SAVE);
     counter++;
   }
+  if(!ok) Serial.write("~R",2);
   frequency = ok ? new_freq : 0xFF;
 }

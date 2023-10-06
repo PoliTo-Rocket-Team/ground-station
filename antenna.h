@@ -83,6 +83,8 @@ private:
      * Value of 255 stands for unitliazed frequency (it must be provided by the user at startup)
      */
     quint8 m_frequency = 255;
+    quint8 old_frequency = 255;
+    void confirmOnline();
 
     QTime m_startTime;
     QSerialPort *arduino;
