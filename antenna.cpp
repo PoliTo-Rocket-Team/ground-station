@@ -53,7 +53,9 @@ void Antenna::setFrequency(quint8 f) {
 bool Antenna::openOutputFile(QString path) {
     if(output_file.is_open()) output_file.close();
     output_file.open(path.toUtf8().constData());
-    return !output_file.fail();
+    if(output_file.fail()) return false;
+    output_file << "P1, P2, T1, T2, ax, ay, az, gx, gy, gz" << std::endl;
+    return true;
 }
 
 void Antenna::closeOutputFile(){
@@ -213,7 +215,10 @@ void Antenna::handlePayload() {
         data.acc_lin = QVector3D(packFloat(16), packFloat(20), packFloat(24));
         data.acc_ang = QVector3D(packFloat(28), packFloat(32), packFloat(36));
         if(output_file.is_open()){
-            output_file <<"bar1: "<< data.pressure1<<" bar2: " << data.pressure2<<" temp1: " << data.temperature1<<" temp2: " << data.temperature2<<" acc_lin: " << data.acc_lin.x()<<"; " << data.acc_lin.y()<<"; " << data.acc_lin.z()<<" acc_ang: "  << data.acc_ang.x()<<"; " << data.acc_ang.y()<<"; " << data.acc_ang.z() << "\n";
+            output_file << data.pressure1 << ", " << data.pressure2 << ", ";
+            output_file << data.temperature1 << ", " << data.temperature2 << ", ";
+            output_file << data.acc_lin.x() << ", " << data.acc_lin.y() << ", " << data.acc_lin.z() << ", ";
+            output_file << data.acc_ang.x() << ", " << data.acc_ang.y() << ", " << data.acc_ang.z() << std::endl;
         }
         emit newData(m_startTime.secsTo(QTime::currentTime()), data);
         break;
