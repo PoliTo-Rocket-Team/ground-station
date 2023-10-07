@@ -1,32 +1,56 @@
 # Ground Station
 
-QtQuick Ddesktop app of the ground station + Arduino code of the LoRa 
+QtQuick desktop app of the ground station + Arduino code of the LoRa 
 
 ## Contribute
 
-This application uses Qt 6.4.3 and the additional library QtCharts (which must be installed from the Qt Maintenance tool). To set up the environement do the following:
+### QtQuick application
 
+Via the Qt Maintenanced Tool, install the following dependecies:
+- Qt 6.4.3
+- QtQuick 
+- QtCharts
+- QtSerialPort
+
+Then set up your environement:
  1. Clone the repository
  2. Qt Creator > File > Open File or Project
  3. Browse to the CMakeList.txt file
  4. Select the development kit (should be Qt 6.4.3)
 
+### Arduino code
+
+1. Install and open the Arduino IDE
+2. Install the library "LoRa_E220"
+3. File > Open > `./arduino/main/main.ino`
+
 ## Messages
 
-| code | name | load type | load description | 
-| :--: | ---- | :--: | ----------- |
-| C | COM Check | - | - |
-| O | Ok | - | - |
-| E | Error | 1 byte | which error occured (see [error codes](#errors-codes)) |
-| D | Data | 9 float | barometer, lat, lng, linear acceleration, angular acceleration |
-| P | Parachute opened | 1 byte | 1 for drogue, 2 for main |
-| F | Frequency change | 1 byte | 0 to 81 (see [LoRa library](https://github.com/xreef/EByte_LoRa_E220_Series_Library#basic-configuration-option)) |
+### Rocket board &mdash; Ground-Station
 
-All of the messages are simply forwarded by the GS LoRa, but some extra logic is implemented for `[C]` and `[F]`.
+These messages are sent via radio from the rocket to the ground station (&darr;), viceversa (&uarr;) or in both directions (&varr;). All the messages received via radio by the ground-station board are then forwarded to the application via Serial communication. In the case of received `[C]`, the board always repeats back a `[C]` to the rocket;
 
-### Communication check 
+| code | name | load type | payload description | direction |
+| :--: | ---- | :--: | ----------- | :-: |
+| C | COM check | - | - | &varr; |
+| E | Error | 1 byte | which error occured (see [error codes](#errors-codes)) (**not yet implemented**) | &darr; |
+| D | Data | 9 float | pressures, temperature, linear acceleration, gyroscope | &darr; |
+| P | Parachute opened | 1 byte | 1 for drogue, 2 for main (**not yet implemented**) | &darr; |
+| F | Frequency change | 1 byte | 0 to 81 (see [LoRa library](https://github.com/xreef/EByte_LoRa_E220_Series_Library#basic-configuration-option)) | &uarr; |
 
-When the rocket board startups or has changed the frequency, it trasmits repeatedly a [C] message. Upon receiving it, the GS LoRa forwards it to the app backend and sends it back to the rocket, ignoring any further `[C]` message received.
+### Internal (serial) messages
+
+To denote the start of a message from the board to the application, a `~` charachter is prepended to the message itself; the size of the payload is then inferred based on the code. In addition to the previous messages, two new ones are used for internal communications (&uarr; = from app to board, &darr; = viceversa):
+
+| code | name | payload | direction |
+| :--: | ---- | :-----: | :-------: |
+| G | Internal COM check | &ndash; | &varr; | 
+| L | Local frequency change | 1 byte: 0 to 81 (see [LoRa library](https://github.com/xreef/EByte_LoRa_E220_Series_Library#basic-configuration-option)) | &uarr; |
+| R | Frequency rollback | &ndash; | &darr; |
+
+The local frequency change issues only the change of frequency of the GS LoRa, and does not initiate the whole procedure of frequency change (which is done using the `F` message).
+
+The `R` message is sent when the (complete) frequency change procedure has failed, i.e. no message was received from the rocket at the new frequency.
 
 ### Errors codes
 
@@ -36,6 +60,7 @@ When the rocket board startups or has changed the frequency, it trasmits repeate
 | 2 | Barometer not working |
 | 3 | GPS not working |
 
+<!-- 
 ## Flow charts
 
 ### Bootstrap
@@ -45,6 +70,7 @@ When the rocket board startups or has changed the frequency, it trasmits repeate
 ### setFrequency
 
 ![setFrequency flowchart](./imgs/setFrequency.svg)
+-->
 
 ## Release
 
