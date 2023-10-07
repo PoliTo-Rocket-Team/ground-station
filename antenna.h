@@ -71,7 +71,7 @@ public:
     Q_INVOKABLE void closeOutputFile();
 
 private:
-    State m_state = State::OFFLINE;
+    State m_state = State::SCANNING;
     QString portName;
     QString boardName;
 
