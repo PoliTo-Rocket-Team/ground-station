@@ -4,15 +4,8 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QDebug>
-#include <unistd.h>
-#include <QRandomGenerator>
 #include <QDateTime>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <iomanip>
-using namespace std;
-ofstream fout;
+
 QVector3D vectorFromBytes(std::byte* raw) {
     float x, y, z;
     std::memcpy(&x, raw, 4);
@@ -57,14 +50,14 @@ void Antenna::setFrequency(quint8 f) {
 //    });
 }
 
-void Antenna::OpenOutputFile(){
-    fout.open("Data_Log.txt");
+bool Antenna::openOutputFile(QString path) {
+    if(output_file.is_open()) output_file.close();
+    output_file.open(path.toUtf8().constData());
+    return !output_file.fail();
 }
 
-void Antenna::CloseOutputFile(){
-    
-    fout.close();
-    
+void Antenna::closeOutputFile(){
+    output_file.close();
 }
 
 void Antenna::openSerialPort()
@@ -219,8 +212,8 @@ void Antenna::handlePayload() {
         data.temperature2 = packFloat(12);
         data.acc_lin = QVector3D(packFloat(16), packFloat(20), packFloat(24));
         data.acc_ang = QVector3D(packFloat(28), packFloat(32), packFloat(36));
-        if(fout){
-            fout <<"bar1: "<< data.pressure1<<" bar2: " << data.pressure2<<" temp1: " << data.temperature1<<" temp2: " << data.temperature2<<" acc_lin: " << data.acc_lin.x()<<"; " << data.acc_lin.y()<<"; " << data.acc_lin.z()<<" acc_ang: "  << data.acc_ang.x()<<"; " << data.acc_ang.y()<<"; " << data.acc_ang.z() << "\n";
+        if(output_file.is_open()){
+            output_file <<"bar1: "<< data.pressure1<<" bar2: " << data.pressure2<<" temp1: " << data.temperature1<<" temp2: " << data.temperature2<<" acc_lin: " << data.acc_lin.x()<<"; " << data.acc_lin.y()<<"; " << data.acc_lin.z()<<" acc_ang: "  << data.acc_ang.x()<<"; " << data.acc_ang.y()<<"; " << data.acc_ang.z() << "\n";
         }
         emit newData(m_startTime.secsTo(QTime::currentTime()), data);
         break;

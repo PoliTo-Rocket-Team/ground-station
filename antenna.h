@@ -6,11 +6,9 @@
 #include <QTime>
 #include <QVector3D>
 #include <QSerialPort>
-#include <iostream>
 #include <fstream>
-#include <string>
-#include <iomanip>
-using namespace std;
+
+
 struct RocketData {
     Q_GADGET
     Q_PROPERTY(float pressure1 MEMBER pressure1);
@@ -68,14 +66,16 @@ public:
      */
     Q_INVOKABLE void reset();
 
-    Q_INVOKABLE void OpenOutputFile();
+    Q_INVOKABLE bool openOutputFile(QString path);
 
-    Q_INVOKABLE void CloseOutputFile();
+    Q_INVOKABLE void closeOutputFile();
 
 private:
-    State m_state = State::SCANNING;
+    State m_state = State::OFFLINE;
     QString portName;
     QString boardName;
+
+    std::ofstream output_file;
     /*
      * Error code
      *
