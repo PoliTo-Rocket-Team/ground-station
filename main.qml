@@ -1,12 +1,13 @@
 import QtQuick 2.9
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Dialogs
 import Antenna 1.0
 
 Window {
     minimumWidth: 900
     width: 1200
-    minimumHeight: 600
+    minimumHeight: 750
     height: 900
     visible: true
     title: "PRT - Ground Station"
@@ -234,6 +235,50 @@ Window {
                             acc_lin.clear();
                             acc_ang.clear();
                             barometer.clear();
+                        }
+                    }
+                }
+                Column {
+                    id: file_section;
+                    spacing: 5;
+
+                    property string path: "";
+
+                    Text {
+                        text: "Output file"
+                        color: "#efefef"
+                        font {
+                            pointSize: 14;
+                            weight: Font.Bold;
+                        }
+                    }
+                    Text {
+                        text: file_section.path || "Currently not saving";
+                        color: "#efefef";
+                        wrapMode: Text.Wrap;
+                        width: 260;
+                    }
+                    Item { width: 1; height: 3; }
+                    UIButton {
+                        text: file_section.path ? "Close" : "Open";
+                        onClicked: {
+                            if(file_section.path) {
+                                file_section.path = "";
+                                Antenna.closeOutputFile();
+                            }
+                            else select_file.open();
+                        }
+                    }
+                    FileDialog {
+                        id: select_file;
+                        acceptLabel: "Select";
+                        rejectLabel: "Cancel";
+                        fileMode: FileDialog.OpenFile;
+                        title: "Select a file to write the rocket data into";
+                        nameFilters: ["Text file (*.txt)", "CSV file (*.csv)", "DAT file (*.dat)"];
+                        onAccepted: {
+                            const p = decodeURIComponent(currentFile.toString().replace(/^file:\/{3}/,''));
+                            if(Antenna.openOutputFile(p)) file_section.path = p;
                         }
                     }
                 }
