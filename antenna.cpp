@@ -39,11 +39,10 @@ Antenna::Antenna(QObject *parent)
 
 void Antenna::setFrequency(quint8 f) {
     old_frequency = m_frequency;
-    const char option = m_state == State::OFFLINE ? 'F' : 'C';
+    char msg[2] = { m_state == State::OFFLINE ? 'L' : 'F', (char)f };
     emit frequencyChanged(m_frequency = f);
     emit stateChanged(m_state = State::POLLING);
-    char msg[3] = { 'F', option, (char)f };
-    arduino->write(msg,3);
+    arduino->write(msg,2);
 //    QTimer::singleShot(2000, this, [this](){
 //        if(m_state == State::POLLING)
 //            emit stateChanged(m_state = State::OFFLINE);

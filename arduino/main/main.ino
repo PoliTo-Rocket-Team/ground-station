@@ -26,7 +26,7 @@ struct RocketData {
 void setup() {
   randomSeed(analogRead(0));
   Serial.begin(9600);
-  while (!Serial);
+  while (!Serial);`
   while (!e220ttl.begin());
   delay(500);
 }
@@ -39,26 +39,25 @@ void loop() {
       case 'G':
         backend_connected = true;
         break;
+      case 'L': {
+        byte new_frequency;
+        Serial.readBytes(&new_frequency, 1);
+        ResponseStructContainer c = e220ttl.getConfiguration();
+        Configuration configuration = *((Configuration *)c.data);
+        // configuration.ADDL = 0x03;
+        // configuration.ADDH = 0x00;
+        configuration.CHAN = frequency = new_frequency;
+        e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
+        c.close();
+        Serial.write("~G", 2);
+        break;
+      }
       case 'F':
         {
-          Serial.readBytes(&inChar,1);
+          // complete procedure
           byte new_frequency;
           Serial.readBytes(&new_frequency, 1);
-          if(inChar == 'F') { 
-            // Force frequency change
-            ResponseStructContainer c = e220ttl.getConfiguration();
-            Configuration configuration = *((Configuration *)c.data);
-            // configuration.ADDL = 0x03;
-	          // configuration.ADDH = 0x00;
-            configuration.CHAN = frequency = new_frequency;
-            e220ttl.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
-            c.close();
-            Serial.write("~G", 2);
-          }
-          else { 
-            // complete procedure
-            changeFrequency(new_frequency);
-          }
+          changeFrequency(new_frequency);
           break;
         }
     }
