@@ -26,7 +26,8 @@ struct RocketData {
 void setup() {
   randomSeed(analogRead(0));
   Serial.begin(9600);
-  e220ttl.begin();
+  while (!Serial);
+  while (!e220ttl.begin());
   delay(500);
 }
 
