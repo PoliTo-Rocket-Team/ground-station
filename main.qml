@@ -3,7 +3,6 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Dialogs
 import Antenna 1.0
-
 Window {
     minimumWidth: 900
     width: 1200
@@ -49,7 +48,6 @@ Window {
             color: "#efefef";
             radius: 8;
         }
-
         Column {
             spacing: 5;
             anchors.fill: parent;
@@ -75,6 +73,7 @@ Window {
                     value: 850;
                     wheelEnabled: true
                     width: 80
+                    editable : true
                     background: Rectangle {
                         radius: 3;
                         color: "white";
@@ -84,6 +83,14 @@ Window {
                 Text {
                     text: "MHz"
                     leftPadding: 2
+                }
+                Text {
+                    text: "change only local:"
+                    leftPadding: 9
+                    rightPadding: 1
+                }
+                CheckBox {
+                    id: localcheckbox
                 }
             }
 
@@ -97,7 +104,7 @@ Window {
                     text: "Confirm";
                     onClicked: {
                         const v = frequency_input.value - 850;
-                        Antenna.setFrequency(v);
+                        Antenna.setFrequency(v,localcheckbox.checked);
                         frequency_popup.close();
                     }
                 }

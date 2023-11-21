@@ -60,7 +60,7 @@ public:
      * Otherwise, it sends a [F] message to the rocket and set connected = false. The outcome can be then [E4] or connected with the new frequency.
      *
      */
-    Q_INVOKABLE void setFrequency(quint8 f);
+    Q_INVOKABLE void setFrequency(quint8 f, bool ch_l);
     /*
      * Resets the antenna as if it was the app startup
      */
@@ -71,7 +71,7 @@ public:
     Q_INVOKABLE void closeOutputFile();
 
 private:
-    State m_state = State::SCANNING;
+    State m_state = State::ONLINE;
     QString portName;
     QString boardName;
 

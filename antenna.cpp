@@ -37,9 +37,9 @@ Antenna::Antenna(QObject *parent)
     scanTimer->start(1000);
 }
 
-void Antenna::setFrequency(quint8 f) {
+void Antenna::setFrequency(quint8 f, bool ch_l) {
     old_frequency = m_frequency;
-    char msg[2] = { m_state == State::OFFLINE ? 'L' : 'F', (char)f };
+    char msg[2] = { m_state == State::OFFLINE || ch_l == true ? 'L' : 'F', (char)f };
     emit frequencyChanged(m_frequency = f);
     emit stateChanged(m_state = State::POLLING);
     arduino->write(msg,2);
