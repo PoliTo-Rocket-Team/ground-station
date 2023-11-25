@@ -34,7 +34,7 @@ class Antenna : public QObject
     Q_OBJECT
 
     Q_PROPERTY(quint8 error READ getError NOTIFY errorChange)
-    Q_PROPERTY(quint8 frequency READ getFrequency NOTIFY frequencyChanged)
+    Q_PROPERTY(quint8 channel READ getChannel NOTIFY channelChanged)
     Q_PROPERTY(State state READ getState NOTIFY stateChanged)
     Q_PROPERTY(QString portName READ getPortName NOTIFY portNameChanged)
     Q_PROPERTY(QString boardName READ getBoardName NOTIFY boardNameChanged)
@@ -49,7 +49,7 @@ public:
     QString getPortName() const { return portName; };
     QString getBoardName() const { return boardName; };
     quint8 getError() const { return m_error; };
-    quint8 getFrequency() const { return m_frequency; };
+    quint8 getChannel() const { return m_channel; };
 
 
     /*
@@ -60,7 +60,7 @@ public:
      * Otherwise, it sends a [F] message to the rocket and set connected = false. The outcome can be then [E4] or connected with the new frequency.
      *
      */
-    Q_INVOKABLE void setFrequency(quint8 f, bool ch_l);
+    Q_INVOKABLE void setChannel(quint8 c, bool ch_l);
     /*
      * Resets the antenna as if it was the app startup
      */
@@ -90,8 +90,8 @@ private:
      *
      * Value of 255 stands for unitliazed frequency (it must be provided by the user at startup)
      */
-    quint8 m_frequency = 255;
-    quint8 old_frequency = 255;
+    quint8 m_channel = 255;
+    quint8 old_channel = 255;
     void confirmOnline();
 
     QTime m_startTime;
@@ -117,7 +117,7 @@ signals:
     void stateChanged(Antenna::State state);
     void portNameChanged(QString name);
     void boardNameChanged(QString name);
-    void frequencyChanged(quint8 f);
+    void channelChanged(quint8 f);
     void errorChange(quint8 e);
     void newData(int ms, RocketData data);
     void rollback();

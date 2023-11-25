@@ -37,10 +37,10 @@ Antenna::Antenna(QObject *parent)
     scanTimer->start(1000);
 }
 
-void Antenna::setFrequency(quint8 f, bool ch_l) {
-    old_frequency = m_frequency;
+void Antenna::setChannel(quint8 f, bool ch_l) {
+    old_channel = m_channel;
     char msg[2] = { m_state == State::OFFLINE || ch_l == true ? 'L' : 'F', (char)f };
-    emit frequencyChanged(m_frequency = f);
+    emit channelChanged(m_channel = f);
     emit stateChanged(m_state = State::POLLING);
     arduino->write(msg,2);
 //    QTimer::singleShot(2000, this, [this](){
@@ -174,7 +174,7 @@ void Antenna::confirmOnline() {
     if(m_state == State::ONLINE) return;
     emit stateChanged(m_state = State::ONLINE);
     m_startTime = QTime::currentTime();
-    old_frequency = m_frequency;
+    old_channel = m_channel;
 }
 
 void Antenna::handlePayload() {
@@ -186,7 +186,7 @@ void Antenna::handlePayload() {
     switch (current_code){
     case 'R':
         // rollback
-        emit frequencyChanged(m_frequency = old_frequency);
+        emit channelChanged(m_channel = old_channel);
         emit stateChanged(m_state = State::ONLINE);
         break;
     case 'G': {

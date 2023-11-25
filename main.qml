@@ -15,7 +15,7 @@ Window {
     Connections {
         target: Antenna
         function onStateChanged(s){
-            if(s === Antenna.OFFLINE && Antenna.frequency === 255) pick_mode_popup.open();
+            if(s === Antenna.OFFLINE && Antenna.channel === 255) pick_mode_popup.open();
         }
         function onNewData(time, data) {;
             acc_lin.add(time, data.acc_lin);
@@ -31,7 +31,7 @@ Window {
         }
     }
 
-    property bool nofreq: Antenna.frequency === 255;
+    property bool nofreq: Antenna.channel === 255;
     property int channel_shift: 850;
 
 
@@ -131,7 +131,7 @@ Window {
                     id: frequency_input
                     from: channel_shift; to: 80+channel_shift;
                     stepSize: 1;
-                    value: 850;
+                    value: channel_shift;
                     wheelEnabled: true
                     width: 80
                     editable : true
@@ -182,7 +182,7 @@ Window {
                     text: "Confirm";
                     onClicked: {
                         const v = frequency_input.value - channel_shift;
-                        Antenna.setFrequency(v,localcheckbox2.checked);
+                        Antenna.setChannel(v,localcheckbox2.checked);
                         frequency_popup.close();
                     }
                 }
@@ -271,13 +271,39 @@ Window {
                         }
                     }
                     Text {
-                        text: nofreq ? "Previous value" : `${Antenna.frequency + 850}MHz`;
+                        text: nofreq ? "Previous value" : `${Antenna.channel + 850}MHz`;
                         color: "#efefef"
                     }
                     Item { width: 1; height: 3; }
                     UIButton {
                         text: "Change";
-                        onClicked: pick_mode_popup.open();
+                        onClicked: {
+                            channel_shift = 850;
+                            frequency_popup.open();
+                        }
+                    }
+                }
+                Column {
+                    spacing: 5;
+                    Text {
+                        text: "Channel"
+                        color: "#efefef"
+                        font {
+                            pointSize: 14;
+                            weight: Font.Bold;
+                        }
+                    }
+                    Text {
+                        text: nofreq ? "Previous value" : `${Antenna.channel}`;
+                        color: "#efefef"
+                    }
+                    Item { width: 1; height: 3; }
+                    UIButton {
+                        text: "Change";
+                        onClicked: {
+                            channel_shift = 0;
+                            frequency_popup.open();
+                        }
                     }
                 }
 //                Column {
@@ -396,7 +422,7 @@ Window {
                 anchors.centerIn: parent
                 visible: Antenna.state === Antenna.POLLING;
                 title: "Polling";
-                description: `Waiting for a signal from the rocket at frequency ${Antenna.frequency+850} MHz (channel: ${Antenna.frequency})`;
+                description: `Waiting for a signal from the rocket at frequency ${Antenna.channel+850} MHz (channel: ${Antenna.channel})`;
             }
 
             Message {
