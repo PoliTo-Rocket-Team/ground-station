@@ -190,6 +190,7 @@ Window {
                     // visible: !nofreq;
                     text: "Cancel";
                     onClicked: frequency_popup.close();
+                    color: "#777777"
                 }
             }
         }

@@ -6,6 +6,7 @@ Button {
     text: ""
     flat: true;
 
+    property color color: "#FA8650";
 
     contentItem: Text {
         id: textual
@@ -13,7 +14,7 @@ Button {
         font.pointSize: 12;
         font.weight: Font.DemiBold;
         opacity: enabled ? 1.0 : 0.3
-        color: btn.hovered ? "#efefef" : "#FA8650";
+        color: btn.hovered ? "#efefef" : btn.color;
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
@@ -25,10 +26,10 @@ Button {
 
     background: Rectangle {
         opacity: enabled ? 1 : 0.3
-        color: btn.hovered ? "#FA8650" : "transparent";
+        color: btn.hovered ? btn.color : "transparent";
         radius: 4
         border {
-            color: "#FA8650";
+            color: btn.color;
             width: 2;
         }
     }
