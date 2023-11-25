@@ -187,7 +187,7 @@ void Antenna::handlePayload() {
     case 'R':
         // rollback
         emit frequencyChanged(m_frequency = old_frequency);
-        emit stateChanged(m_state = State::ONLINE);
+        emit stateChanged(m_state = State::OFFLINE);
         break;
     case 'G': {
         // Ground-station internal comunication check
