@@ -32,6 +32,7 @@ Window {
     }
 
     property bool nofreq: Antenna.frequency === 255;
+    property int channel_shift: 850;
 
 
     Popup{
@@ -71,6 +72,7 @@ Window {
                 UIButton {
                     text: "User Friendly";
                     onClicked: {
+                        channel_shift = 850;
                         pick_mode_popup.close();
                         frequency_popup.open();
                     }
@@ -81,88 +83,10 @@ Window {
                     rightPadding: 15;
                     text: "Raw";
                     onClicked:{
+                        channel_shift = 0;
                         pick_mode_popup.close();
-                        frequency_popup_2.open();
+                        frequency_popup.open();
                     }
-                }
-            }
-        }
-    }
-
-    Popup{
-        id: frequency_popup_2
-        modal: true;
-        closePolicy: Dialog.CloseOnEscape
-        anchors.centerIn: parent;
-        padding: 15;
-        width: 350;
-        Overlay.modal: Rectangle {
-            color: "#b3121212"
-        }
-        background: Rectangle {
-            color: "#efefef";
-            radius: 8;
-        }
-        Column {
-            spacing: 5;
-            anchors.fill: parent;
-            Text {
-                text: `${Antenna.state === Antenna.OFFLINE ? "Set" : "Change"} channel`;
-                color: "#212121";
-                font {
-                    weight: Font.DemiBold;
-                    pointSize: 18;
-                }
-            }
-            Text {
-                text: "Please insert the desired channel: range goes from 0 to 80";
-                width: parent.width;
-                wrapMode: Text.WordWrap;
-                bottomPadding: 15;
-            }
-            Row {
-                SpinBox {
-                    id: channel_input
-                    from: 0; to: 80;
-                    stepSize: 1;
-                    value: 0;
-                    wheelEnabled: true
-                    width: 80
-                    editable : true
-                    background: Rectangle {
-                        radius: 3;
-                        color: "white";
-                        border.width: 0;
-                    }
-                }
-                Text {
-                    text: "change only local:"
-                    leftPadding: 9
-                    rightPadding: 1
-                }
-                CheckBox {
-                    id: localcheckbox
-                }
-            }
-
-            Row {
-                topPadding: 15
-                spacing: 10;
-                width: parent.width
-                layoutDirection: Qt.RightToLeft;
-
-                UIButton {
-                    text: "Confirm";
-                    onClicked: {
-                        const v = channel_input.value;
-                        Antenna.setFrequency(v,localcheckbox.checked);
-                        frequency_popup_2.close();
-                    }
-                }
-                UIButton {
-                    // visible: !channel;
-                    text: "Cancel";
-                    onClicked: frequency_popup_2.close();
                 }
             }
         }
@@ -187,7 +111,7 @@ Window {
             spacing: 5;
             anchors.fill: parent;
             Text {
-                text: `${Antenna.state === Antenna.OFFLINE ? "Set" : "Change"} frequency`;
+                text: `${Antenna.state === Antenna.OFFLINE ? "Set" : "Change"} ${channel_shift ? "frequency" : "channel"}`;
                 color: "#212121";
                 font {
                     weight: Font.DemiBold;
@@ -195,7 +119,7 @@ Window {
                 }
             }
             Text {
-                text: "Please insert the desired frequency: range goes from 850 to 930 MHz";
+                text: `Please insert the desired ${channel_shift ? "frequency" : "channel"}: range goes from ${channel_shift} to ${80+channel_shift} ${channel_shift ? "MHz" : ''}`;
                 width: parent.width;
                 wrapMode: Text.WordWrap;
                 bottomPadding: 15;
@@ -203,7 +127,7 @@ Window {
             Row {
                 SpinBox {
                     id: frequency_input
-                    from: 850; to: 930;
+                    from: channel_shift; to: 80+channel_shift;
                     stepSize: 1;
                     value: 850;
                     wheelEnabled: true
@@ -216,6 +140,7 @@ Window {
                     }
                 }
                 Text {
+                    visible: !!channel_shift;
                     text: "MHz"
                     leftPadding: 2
                 }
@@ -238,7 +163,7 @@ Window {
                 UIButton {
                     text: "Confirm";
                     onClicked: {
-                        const v = frequency_input.value - 850;
+                        const v = frequency_input.value - channel_shift;
                         Antenna.setFrequency(v,localcheckbox2.checked);
                         frequency_popup.close();
                     }
