@@ -125,6 +125,8 @@ Window {
                 bottomPadding: 15;
             }
             Row {
+                anchors.horizontalCenter: parent.horizontalCenter;
+
                 SpinBox {
                     id: frequency_input
                     from: channel_shift; to: 80+channel_shift;
@@ -144,13 +146,29 @@ Window {
                     text: "MHz"
                     leftPadding: 2
                 }
+            }
+
+            Text {
+                visible: Antenna.state === Antenna.OFFLINE;
+                text: "Note that the change will only be local, since no previous communication with the rocket was established";
+                wrapMode: Text.WordWrap;
+                width: parent.width;
+                topPadding: 15;
+
+                font.pointSize: 9;
+                color: "#545454";
+            }
+
+            Row {
+                topPadding: 15;
+                spacing: 10;
+                visible: Antenna.state !== Antenna.OFFLINE;
                 Text {
-                    text: "change only local:"
-                    leftPadding: 9
-                    rightPadding: 1
+                    text: "Only change locally?";
                 }
                 CheckBox {
-                    id: localcheckbox2
+                    visible: Antenna.state !== Antenna.OFFLINE;
+                    id: localcheckbox2;
                 }
             }
 
