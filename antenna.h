@@ -34,7 +34,7 @@ class Antenna : public QObject
     Q_OBJECT
 
     Q_PROPERTY(quint8 error READ getError NOTIFY errorChange)
-    Q_PROPERTY(quint8 frequency READ getFrequency WRITE setFrequency NOTIFY frequencyChanged)
+    Q_PROPERTY(quint8 frequency READ getFrequency NOTIFY frequencyChanged)
     Q_PROPERTY(State state READ getState NOTIFY stateChanged)
     Q_PROPERTY(QString portName READ getPortName NOTIFY portNameChanged)
     Q_PROPERTY(QString boardName READ getBoardName NOTIFY boardNameChanged)
