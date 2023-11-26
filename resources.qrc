@@ -9,5 +9,6 @@
     <qresource prefix="/imgs">
         <file alias="logo">imgs/logo.png</file>
         <file alias="icon">imgs/icon.png</file>
+        <file alias="tune">imgs/tune.png</file>
     </qresource>
 </RCC>

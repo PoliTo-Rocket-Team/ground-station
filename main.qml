@@ -14,9 +14,9 @@ Window {
 
     Connections {
         target: Antenna
-        function onStateChanged(s){
-            if(s === Antenna.OFFLINE && Antenna.channel === 255) pick_mode_popup.open();
-        }
+//        function onStateChanged(s){
+//            if(s === Antenna.OFFLINE && Antenna.channel === 255) pick_mode_popup.open();
+//        }
         function onNewData(time, data) {;
             acc_lin.add(time, data.acc_lin);
             acc_ang.add(time, data.acc_ang);
@@ -34,63 +34,6 @@ Window {
     property bool nofreq: Antenna.channel === 255;
     property int channel_shift: 850;
 
-
-    Popup{
-        id: pick_mode_popup
-        modal: true;
-        closePolicy: Dialog.CloseOnEscape
-        anchors.centerIn: parent;
-        padding: 15;
-        width: 350;
-        Overlay.modal: Rectangle {
-            color: "#b3121212"
-        }
-        background: Rectangle {
-            color: "#efefef";
-            radius: 8;
-        }
-        Column{
-            spacing: 5;
-            anchors.fill: parent;
-            Text {
-                text: `${Antenna.state === Antenna.OFFLINE ? "Set" : "Change"} frequency mode`;
-                color: "#212121";
-                font {
-                    weight: Font.DemiBold;
-                    pointSize: 18;
-                }
-            }
-            Text {
-                text: "Please insert the desired frequency mode";
-                width: parent.width;
-                wrapMode: Text.WordWrap;
-                bottomPadding: 15;
-            }
-            Row {
-                spacing: 30;
-                leftPadding: 30;
-                UIButton {
-                    text: "User Friendly";
-                    onClicked: {
-                        channel_shift = 850;
-                        pick_mode_popup.close();
-                        frequency_popup.open();
-                    }
-                }
-
-                UIButton {
-                    leftPadding: 15;
-                    rightPadding: 15;
-                    text: "Raw";
-                    onClicked:{
-                        channel_shift = 0;
-                        pick_mode_popup.close();
-                        frequency_popup.open();
-                    }
-                }
-            }
-        }
-    }
 
     Popup {
         id: frequency_popup
@@ -240,6 +183,7 @@ Window {
                         weight: Font.Bold;
                     }
                 }
+
                 Column {
                     spacing: 5;
                     Text {
@@ -261,48 +205,88 @@ Window {
                 }
 
                 Column {
+                    width: parent.width;
                     spacing: 5;
                     Text {
-                        text: "Frequency"
+                        text: "Radio"
                         color: "#efefef"
                         font {
                             pointSize: 14;
                             weight: Font.Bold;
                         }
                     }
-                    Text {
-                        text: nofreq ? "Previous value" : `${Antenna.channel + 850}MHz`;
-                        color: "#efefef"
-                    }
-                    Item { width: 1; height: 3; }
-                    UIButton {
-                        text: "Change";
-                        onClicked: {
-                            channel_shift = 850;
-                            frequency_popup.open();
+                    RowLayout {
+                        width: parent.width;
+                        Text {
+                            text: "Frequency:"
+                            color: "#efefef"
+                        }
+                        Text {
+                            text: nofreq ? "previous" : `${Antenna.channel + 850}MHz`;
+                            color: "#efefef"
+                        }
+                        Rectangle {
+                            Layout.alignment: Qt.AlignRight;
+                            Layout.fillWidth: true;
+                            Button {
+                                anchors.right: parent.right;
+                                anchors.verticalCenter: parent.verticalCenter;
+                                background: Rectangle { opacity: 0 }
+                                flat: true;
+                                icon {
+                                    name: "tune"
+                                    source: "imgs/tune.png"
+                                    width: 22;
+                                    height: 22;
+                                    color: "#FA8650" //"#FF5100"
+                                }
+                                onClicked: {
+                                    channel_shift = 850;
+                                    frequency_popup.open();
+                                }
+                                MouseArea {
+                                    anchors.fill: parent;
+                                    cursorShape: Qt.PointingHandCursor;
+                                    onPressed:  mouse.accepted = false;
+                                }
+                            }
                         }
                     }
-                }
-                Column {
-                    spacing: 5;
-                    Text {
-                        text: "Channel"
-                        color: "#efefef"
-                        font {
-                            pointSize: 14;
-                            weight: Font.Bold;
+                    RowLayout {
+                        width: parent.width;
+                        Text {
+                            text: "Channel:"
+                            color: "#efefef"
                         }
-                    }
-                    Text {
-                        text: nofreq ? "Previous value" : `${Antenna.channel}`;
-                        color: "#efefef"
-                    }
-                    Item { width: 1; height: 3; }
-                    UIButton {
-                        text: "Change";
-                        onClicked: {
-                            channel_shift = 0;
-                            frequency_popup.open();
+                        Text {
+                            text: nofreq ? "previous" : Antenna.channel;
+                            color: "#efefef"
+                        }
+                        Rectangle {
+                            Layout.alignment: Qt.AlignRight;
+                            Layout.fillWidth: true;
+                            Button {
+                                anchors.right: parent.right;
+                                anchors.verticalCenter: parent.verticalCenter;
+                                background: Rectangle { opacity: 0 }
+                                flat: true;
+                                icon {
+                                    name: "tune"
+                                    source: "icons/tune.png"
+                                    width: 22;
+                                    height: 22;
+                                    color: "#FA8650" //"#FF5100"
+                                }
+                                onClicked: {
+                                    channel_shift = 0;
+                                    frequency_popup.open();
+                                }
+                                MouseArea {
+                                    anchors.fill: parent;
+                                    cursorShape: Qt.PointingHandCursor;
+                                    onPressed:  mouse.accepted = false;
+                                }
+                            }
                         }
                     }
                 }
