@@ -131,7 +131,7 @@ Window {
                     id: frequency_input
                     from: channel_shift; to: 80+channel_shift;
                     stepSize: 1;
-                    value: channel_shift;
+                    value: (Antenna.channel === 255 ? 0 : Antenna.channel) + channel_shift;
                     wheelEnabled: true
                     width: 80
                     editable : true
