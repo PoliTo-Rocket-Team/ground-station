@@ -82,3 +82,60 @@ Following the [official guide](https://doc.qt.io/qt-6/windows-deployment.html):
 2. Copy the generated `/path/to/release/build/folder/appground-station.exe` file into a new folder 
 3. Open the cmd in the `bin` directory inside the Qt directory in your local machine (usually `C:/Qt/<version>/<compiler>/`)
 4. Run `windeployqt /path/to/the/executable/you/copied.exe --qmldir /path/to/release/build/folder/ground-station`  
+
+#### Other way 
+
+THIS TUTORIAL IS FOR WINDOWS USERS
+
+Needed tools : perl, cmake, git, VisualStudio (all of theses should be added to your path)
+
+we will start by downloading the git qt project 
+
+`$ git clone git://code.qt.io/qt/qt5.git qt6`
+
+`$ cd qt6`
+
+`$ git switch 6.4.3`
+
+now we can leave the git bash and open a normal cmd with admin rights, we type:
+
+` $ perl init-repository  --module-subset=qtbase,qtshadertools,qtdeclarative,qtcharts,qtserialport `
+
+
+Now go to the parent folder of qt6 (for ex, if qt6's adress is C:\User\Docments\QT\qt6 go to C:\User\Docments\QT using cd C:\User\Docments\QT) then do :
+
+`$ mkdir qt6-build`
+
+`$ cd qt6-build`
+
+`$ configure.bat -static -release -opensource -confirm-license  -prefix <path/to/install> `
+
+`$ cmake --build . `
+
+`$ cmake --install . `
+
+replace <path/to/install>  with the directory in which you want to install Qt, I advice you to create a Qt directory such as C:\Qt
+
+As fast as you do that add the following entry to your environment variable:
+Variable : CMAKE_PREFIX_PATH (NOT PATH)
+Value : where you installed QT (in my example C:\QT)
+
+
+Congrats, you statically built QT. Now we will build the actual project
+
+create a new directory where we will build the project, there open a x64 Native Tools Command Prompt. then you throw the following 2 commands :
+
+`cmake ../path/to/ground-station -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE=Release `
+
+`msbuild /m /p:Configuration=Release ground-station.sln` 
+
+(check that msbuild is already on path, if you do not have VS2019 replace it with the version you have, replace ../path/to/ground-station with the actual path to the ground-station source files)
+
+At the end of the operation the cmd will display "BUILD FAILED" => THAT ISN'T TRUE
+
+check for the Release directory in your project and run the exe + share it if needed
+
+
+guide based on : https://wiki.qt.io/Building_Qt_6_from_Git
+
+
