@@ -72,70 +72,64 @@ The `R` message is sent when the (complete) frequency change procedure has faile
 ![setFrequency flowchart](./imgs/setFrequency.svg)
 -->
 
-## Release
+## Build for release
 
-### Windows
+> NOTE: the following guide is for __windows only__
 
-Following the [official guide](https://doc.qt.io/qt-6/windows-deployment.html):
+### Deployable folder
+
+The Windows deployment tool `windeployqt` is designed to automate the process of creating a deployable folder containing the Qt-related dependencies (libraries, QML imports, plugins, and translations) required to run the application from that folder.
+Following the [official guide](https://doc.qt.io/qt-6/windows-deployment.html#the-windows-deployment-tool):
 
 1. Switch to "Release" build type and build the project
 2. Copy the generated `/path/to/release/build/folder/appground-station.exe` file into a new folder 
 3. Open the cmd in the `bin` directory inside the Qt directory in your local machine (usually `C:/Qt/<version>/<compiler>/`)
 4. Run `windeployqt /path/to/the/executable/you/copied.exe --qmldir /path/to/release/build/folder/ground-station`  
 
-#### Other way 
+> NOTE: the deployable folder for some reason does not include some Qt dlls required to run the application. The person you are giving this folder to still needs to provide those dlls.
 
-THIS TUTORIAL IS FOR WINDOWS USERS
+### Static executable 
 
-Needed tools : perl, cmake, git, VisualStudio (all of theses should be added to your path)
+It is possible to build statically the application and produce a single executable. You will need the following tools installed on your machine and present in the `PATH` variable:
 
-we will start by downloading the git qt project 
+- CMake & git (already needed for development)
+- [MSVC](https://visualstudio.microsoft.com/vs/features/cplusplus/) (Microsoft Visual C++) compiler
+- [Perl](https://www.perl.org/get.html)
 
-`$ git clone git://code.qt.io/qt/qt5.git qt6`
+Before building our application, you first need to statically buil Qt. Open a command prompt with admin rigth and perform the following:
 
-`$ cd qt6`
+> Here we use `C:\Qt` as installation folder of Qt, but actually you can use whatever folder you like: make sure it already exists
 
-`$ git switch 6.4.3`
+```bash
+#  Download the git Qt project
+git clone git://code.qt.io/qt/qt5.git qt6
+cd qt6
+git switch 6.4.3
 
-now we can leave the git bash and open a normal cmd with admin rights, we type:
+# init the repository with the qt modules used
+perl init-repository --module-subset=qtbase,qtshadertools,qtdeclarative,qtcharts,qtserialport
 
-` $ perl init-repository  --module-subset=qtbase,qtshadertools,qtdeclarative,qtcharts,qtserialport `
+# create the build directory
+cd ..
+mkdir qt6-build
+cd qt6-build
 
+# configure and build
+..\qt6\configure.bat -static -release -opensource -confirm-license -prefix C:\Qt
+cmake --build .
+cmake --install .
+```
 
-Now go to the parent folder of qt6 (for ex, if qt6's adress is C:\User\Docments\QT\qt6 go to C:\User\Docments\QT using cd C:\User\Docments\QT) then do :
+Now add `CMAKE_PREFIX_PATH` to your environment variables (__not__ to the `PATH` variable) with the value `C:\Qt` (or whatever folder you chose for the installation folder of Qt). If you have other cmake projects, you can remove/restore this variable after completing the build of the application.
 
-`$ mkdir qt6-build`
+Finally, create the folder where you want to build the ground-station project, open the Native Tools Command Prompt (it is part of Visual Studio and can be found using the windows search bar) and run the following commands:
 
-`$ cd qt6-build`
+```bash 
+cd <newly\created\ground-station\build\folder>
+cmake <path\to\ground-station\source\folder> -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release 
+msbuild /m /p:Configuration=Release ground-station.sln
+```
 
-`$ configure.bat -static -release -opensource -confirm-license  -prefix <path/to/install> `
+If you have older versions of VS2022, replace the string with the version you have (e.g. `"Visual Studio 16 2019"`). At the end of the operation the message `BUILD FAILED` will be displayed, but that is __not__ true. You should now have an executable inside your build folder.
 
-`$ cmake --build . `
-
-`$ cmake --install . `
-
-replace <path/to/install>  with the directory in which you want to install Qt, I advice you to create a Qt directory such as C:\Qt
-
-As fast as you do that add the following entry to your environment variable:
-Variable : CMAKE_PREFIX_PATH (NOT PATH)
-Value : where you installed QT (in my example C:\QT)
-
-
-Congrats, you statically built QT. Now we will build the actual project
-
-create a new directory where we will build the project, there open a x64 Native Tools Command Prompt. then you throw the following 2 commands :
-
-`cmake ../path/to/ground-station -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE=Release `
-
-`msbuild /m /p:Configuration=Release ground-station.sln` 
-
-(check that msbuild is already on path, if you do not have VS2019 replace it with the version you have, replace ../path/to/ground-station with the actual path to the ground-station source files)
-
-At the end of the operation the cmd will display "BUILD FAILED" => THAT ISN'T TRUE
-
-check for the Release directory in your project and run the exe + share it if needed
-
-
-guide based on : https://wiki.qt.io/Building_Qt_6_from_Git
-
-
+> Guide based on : https://wiki.qt.io/Building_Qt_6_from_Git
