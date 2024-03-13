@@ -157,7 +157,7 @@ Window {
 
     Grid {
         anchors.fill: parent;
-        visible: Antenna.state === Antenna.OFFLINE || Antenna.state === Antenna.ONLINE || Antenna.state === Antenna.POLLING;
+        visible: Antenna.state === Antenna.OFFLINE || Antenna.state === Antenna.POLLING || Antenna.state === Antenna.ONLINE;
         rows: 1; columns: 2;
 
         Rectangle {
@@ -482,6 +482,36 @@ Window {
                     adaptive: adaptive.checked;
                     number: 2;
                 }
+            }
+        }
+    }
+
+    Popup{
+        id: filepick
+        visible: Antenna.state === Antenna.ONLINE && !file_section.path;
+        modal: true;
+        closePolicy: Dialog.CloseOnEscape
+        // closePolicy: nofreq ? Dialog.NoAutoClose : Dialog.CloseOnEscape;
+        anchors.centerIn: parent;
+        padding: 15;
+        width: 350;
+        Overlay.modal: Rectangle {
+            color: "#b3121212"
+        }
+        background: Rectangle {
+            color: "#efefef";
+            radius: 8;
+        }
+
+        UIButton {
+            anchors.centerIn: parent
+            text: file_section.path ? "Close" : "Select a .txt for output purposes";
+            onClicked: {
+                if(file_section.path) {
+                    file_section.path = "";
+                    Antenna.closeOutputFile();
+                }
+                else select_file.open();
             }
         }
     }
