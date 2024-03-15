@@ -42,7 +42,7 @@ class Antenna : public QObject
 public:
     explicit Antenna(QObject *parent = nullptr);
 
-    enum State { SCANNING, OPENING_SERIAL, OFFLINE, POLLING, ONLINE };
+    enum State { SCANNING, OPENING_SERIAL, OFFLINE, POLLING, ONLINE, MEASURING };
     Q_ENUM(State)
 
     State getState() const { return m_state; };
@@ -69,6 +69,8 @@ public:
     Q_INVOKABLE bool openOutputFile(QString path);
 
     Q_INVOKABLE void closeOutputFile();
+
+    Q_INVOKABLE void setState(State S);
 
 private:
     State m_state = State::ONLINE;

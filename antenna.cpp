@@ -37,6 +37,10 @@ Antenna::Antenna(QObject *parent)
     scanTimer->start(1000);
 }
 
+void::Antenna::setState(State S){
+    emit stateChanged(m_state = S);
+}
+
 void Antenna::setChannel(quint8 f, bool ch_l) {
     old_channel = m_channel;
     char msg[2] = { m_state == State::OFFLINE || ch_l == true ? 'L' : 'F', (char)f };

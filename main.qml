@@ -157,7 +157,7 @@ Window {
 
     Grid {
         anchors.fill: parent;
-        visible: Antenna.state === Antenna.OFFLINE || Antenna.state === Antenna.POLLING || Antenna.state === Antenna.ONLINE;
+        visible: Antenna.state === Antenna.OFFLINE || Antenna.state === Antenna.POLLING || Antenna.state === Antenna.ONLINE || Antenna.state === Antenna.MEASURING;
         rows: 1; columns: 2;
 
         Rectangle {
@@ -437,7 +437,7 @@ Window {
             }
 
             GridLayout {
-                visible: Antenna.state === Antenna.ONLINE && Antenna.error === 0;
+                visible: Antenna.state === Antenna.MEASURING && Antenna.error === 0;
                 rows: 2;
                 columns: 2;
                 anchors {
@@ -505,7 +505,7 @@ Window {
 
         UIButton {
             anchors.centerIn: parent
-            text: file_section.path ? "Close" : "Select a .txt for output purposes";
+            text: "Select a .txt for output purposes";
             onClicked: {
                 if(file_section.path) {
                     file_section.path = "";
@@ -515,6 +515,32 @@ Window {
             }
         }
     }
+
+    Popup{
+        id: measuring_switcher
+        visible: Antenna.state === Antenna.ONLINE && Antenna.error === 0 && file_section.path;
+        modal: true;
+        closePolicy: Dialog.CloseOnEscape
+        // closePolicy: nofreq ? Dialog.NoAutoClose : Dialog.CloseOnEscape;
+        anchors.centerIn: parent;
+        padding: 15;
+        width: 350;
+        Overlay.modal: Rectangle {
+            color: "#b3121212"
+        }
+        background: Rectangle {
+            color: "#efefef";
+            radius: 8;
+        }
+        UIButton{
+            anchors.centerIn: parent
+            text: "Start (logic still to be implemented)";
+            onClicked: {
+                Antenna.setState(Antenna.MEASURING);
+            }
+        }
+    }
 }
+
 
 
