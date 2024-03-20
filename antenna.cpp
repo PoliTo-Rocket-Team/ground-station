@@ -37,8 +37,9 @@ Antenna::Antenna(QObject *parent)
     scanTimer->start(1000);
 }
 
-void::Antenna::setState(State S){
-    emit stateChanged(m_state = S);
+void Antenna::startMeasuring() {
+    if(!output_file.is_open()) return;
+    arduino->write("M",1);
 }
 
 void Antenna::setChannel(quint8 f, bool ch_l) {
@@ -209,7 +210,14 @@ void Antenna::handlePayload() {
         emit errorChange(m_error = payload.at(0) - '0');
         break;
     case 'D': {
-        confirmOnline();
+        if(m_state != State::MEASURING) {
+            if(output_file.is_open()) {
+                emit stateChanged(m_state = State::MEASURING);
+                m_startTime = QTime::currentTime();
+                old_channel = m_channel;
+            }
+            else if(m_state != State::ONLINE) emit stateChanged(m_state = State::ONLINE);
+        }
         RocketData data{};
         data.pressure1 = packFloat(0);
         data.pressure2 = packFloat(4);

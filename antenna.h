@@ -70,7 +70,7 @@ public:
 
     Q_INVOKABLE void closeOutputFile();
 
-    Q_INVOKABLE void setState(State S);
+    Q_INVOKABLE void startMeasuring();
 
 private:
     State m_state = State::ONLINE;
