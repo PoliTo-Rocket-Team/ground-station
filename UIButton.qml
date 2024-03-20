@@ -14,7 +14,7 @@ Button {
         font.pointSize: 12;
         font.weight: Font.DemiBold;
         opacity: enabled ? 1.0 : 0.3
-        color: btn.hovered ? "#efefef" : btn.color;
+        color: btn.hovered && enabled ? "#efefef" : btn.color;
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
@@ -26,7 +26,7 @@ Button {
 
     background: Rectangle {
         opacity: enabled ? 1 : 0.3
-        color: btn.hovered ? btn.color : "transparent";
+        color: btn.hovered && enabled ? btn.color : "transparent";
         radius: 4
         border {
             color: btn.color;
