@@ -334,50 +334,6 @@ Window {
                         }
                     }
                 }
-                Column {
-                    id: file_section;
-                    spacing: 5;
-
-                    property string path: "";
-
-                    Text {
-                        text: "Output file"
-                        color: "#efefef"
-                        font {
-                            pointSize: 14;
-                            weight: Font.Bold;
-                        }
-                    }
-                    Text {
-                        text: file_section.path || "Currently not saving";
-                        color: "#efefef";
-                        wrapMode: Text.Wrap;
-                        width: 260;
-                    }
-                    Item { width: 1; height: 3; }
-                    UIButton {
-                        text: file_section.path ? "Close" : "Open";
-                        onClicked: {
-                            if(file_section.path) {
-                                file_section.path = "";
-                                Antenna.closeOutputFile();
-                            }
-                            else select_file.open();
-                        }
-                    }
-                    FileDialog {
-                        id: select_file;
-                        acceptLabel: "Select";
-                        rejectLabel: "Cancel";
-                        fileMode: FileDialog.OpenFile;
-                        title: "Select a file to write the rocket data into";
-                        nameFilters: ["Text file (*.txt)", "CSV file (*.csv)", "DAT file (*.dat)"];
-                        onAccepted: {
-                            const p = decodeURIComponent(currentFile.toString().replace(/^file:\/{3}/,''));
-                            if(Antenna.openOutputFile(p)) file_section.path = p;
-                        }
-                    }
-                }
             }
             Image {
                 id: logo
@@ -436,8 +392,62 @@ Window {
                 }
             }
 
+            Message {
+                width: 360
+                anchors.centerIn: parent
+                visible: Antenna.state === Antenna.ONLINE && Antenna.error === 0;
+                title: `Online`;
+                description: `Communication checks are exchanged with the rocket. To start measuring, please select a file.`
+
+                Column {
+                    id: file_section;
+                    spacing: 8;
+                    topPadding: 15;
+
+                    property string path: "";
+
+                    Text {
+                        text: file_section.path ? `Saving on: ${file_section.path}` : "No file chosen";
+                        color: "#555";
+                        font {
+                            pointSize: 12;
+                        }
+                    }
+                    UIButton {
+                        text: "Choose file";
+                        onClicked: {
+                            select_file.open();
+                        }
+                    }
+                    FileDialog {
+                        id: select_file;
+                        acceptLabel: "Select";
+                        rejectLabel: "Cancel";
+                        fileMode: FileDialog.OpenFile;
+                        title: "Select a file to write the rocket data into";
+                        nameFilters: ["Text file (*.txt)", "CSV file (*.csv)", "DAT file (*.dat)"];
+                        onAccepted: {
+                            if(file_section.path) {
+                                // close last open file
+                                Antenna.closeOutputFile();
+                            }
+                            const p = decodeURIComponent(currentFile.toString().replace(/^file:\/{3}/,''));
+                            if(Antenna.openOutputFile(p)) file_section.path = p;
+                            else file_section.path = "";  // if we cannot open it
+                        }
+                    }
+                    UIButton {
+                        text: "Start measuring";
+                        enabled: !!file_section.path;
+                        onClicked: {
+
+                        }
+                    }
+                }
+            }
+
             GridLayout {
-                visible: Antenna.state === Antenna.MEASURING && Antenna.error === 0;
+                visible: Antenna.state === Antenna.MEASURING;
                 rows: 2;
                 columns: 2;
                 anchors {
@@ -482,61 +492,6 @@ Window {
                     adaptive: adaptive.checked;
                     number: 2;
                 }
-            }
-        }
-    }
-
-    Popup{
-        id: filepick
-        visible: Antenna.state === Antenna.ONLINE && !file_section.path;
-        modal: true;
-        closePolicy: Dialog.CloseOnEscape
-        // closePolicy: nofreq ? Dialog.NoAutoClose : Dialog.CloseOnEscape;
-        anchors.centerIn: parent;
-        padding: 15;
-        width: 350;
-        Overlay.modal: Rectangle {
-            color: "#b3121212"
-        }
-        background: Rectangle {
-            color: "#efefef";
-            radius: 8;
-        }
-
-        UIButton {
-            anchors.centerIn: parent
-            text: "Select a .txt for output purposes";
-            onClicked: {
-                if(file_section.path) {
-                    file_section.path = "";
-                    Antenna.closeOutputFile();
-                }
-                else select_file.open();
-            }
-        }
-    }
-
-    Popup{
-        id: measuring_switcher
-        visible: Antenna.state === Antenna.ONLINE && Antenna.error === 0 && file_section.path;
-        modal: true;
-        closePolicy: Dialog.CloseOnEscape
-        // closePolicy: nofreq ? Dialog.NoAutoClose : Dialog.CloseOnEscape;
-        anchors.centerIn: parent;
-        padding: 15;
-        width: 350;
-        Overlay.modal: Rectangle {
-            color: "#b3121212"
-        }
-        background: Rectangle {
-            color: "#efefef";
-            radius: 8;
-        }
-        UIButton{
-            anchors.centerIn: parent
-            text: "Start (logic still to be implemented)";
-            onClicked: {
-                Antenna.setState(Antenna.MEASURING);
             }
         }
     }
